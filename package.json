@@ -4,7 +4,7 @@
   "description": "",
   "author": "Scott Cooper <scttcper@gmail.com>",
   "license": "MIT",
-  "repository": "",
+  "repository": "typectrl/deluge",
   "keywords": [
     "deluge",
     "axios",
@@ -25,7 +25,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:ci": "jest --coverage --no-cache",
-    "travis-deploy-once": "travis-deploy-once",
+    "travis-deploy-once": "travis-deploy-once --pro",
     "semantic-release": "cd dist && semantic-release"
   },
   "dependencies": {
@@ -52,6 +52,9 @@
     "tslint-xo": "0.10.0",
     "typedoc": "0.13.0",
     "typescript": "3.1.6"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "release": {
     "branch": "master"

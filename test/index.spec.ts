@@ -5,7 +5,6 @@ const baseURL = 'http://localhost:8112/';
 const torrentFile = path.join(__dirname + '/ubuntu-18.04.1-desktop-amd64.iso.torrent');
 
 describe('Deluge', () => {
-
   it('should be instantiable', async () => {
     const deluge = new Deluge({ baseURL });
     expect(deluge).toBeTruthy();
@@ -14,8 +13,9 @@ describe('Deluge', () => {
   });
   it('should disconnect', async () => {
     const deluge = new Deluge({ baseURL });
-    const res = await deluge.connected();
-    expect(typeof res).toBe('boolean');
+    await deluge.connect();
+    const res = await deluge.disconnect();
+    expect(res).toBe(true);
   });
   it('should connect', async () => {
     const deluge = new Deluge({ baseURL });

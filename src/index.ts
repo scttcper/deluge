@@ -94,7 +94,7 @@ export interface AddTorrentOptions {
 }
 
 const defaults: DelugeConfig = {
-  baseURL: 'http://localhost:8112',
+  baseURL: 'http://localhost:8112/',
   password: 'deluge',
 };
 
@@ -105,6 +105,10 @@ export class Deluge {
 
   constructor(options: Partial<DelugeConfig>) {
     this.config = { ...defaults, ...options };
+    // baseURL requires end slash to get to json route
+    if (this.config.baseURL[this.config.baseURL.length - 1] !== '/') {
+      this.config.baseURL += '/';
+    }
   }
 
   resetSession() {
@@ -158,9 +162,9 @@ export class Deluge {
    * Disconnects deluge - warning all instances connected to this client will also be disconnected.
    * Other instances may also reconnect. Not really sure why you would want to disconnect
    */
-  async disconnect() {
+  async disconnect(): Promise<boolean> {
     const res = await this.request<BooleanStatus>("web.disconnect", [], true, false);
-    return res.body;
+    return res.body.result;
   }
 
   /**
@@ -202,39 +206,6 @@ export class Deluge {
     }
     this.cookie = Cookie.parse(res.headers['set-cookie'][0]);
     return true;
-  }
-
-  async request<T extends object>(
-    method: string,
-    params: any[] = [],
-    needsAuth = true,
-    autoConnect = true,
-  ): Promise<Response<T>> {
-    if (this.msgId === 1024) {
-      this.msgId = 0;
-    }
-    if (needsAuth) {
-      await this.validateAuth();
-    }
-    if (needsAuth && autoConnect) {
-      const isConnected = await this.connected();
-      if (!isConnected) {
-        await this.connect();
-      }
-    }
-    const headers: any = {
-      Cookie: this.cookie && this.cookie.cookieString(),
-    };
-    const url = resolve(this.config.baseURL, '/json');
-    return got.post(url, {
-      json: true,
-      body: {
-        method,
-        params,
-        id: this.msgId++,
-      },
-      headers,
-    });
   }
 
   /**
@@ -318,6 +289,39 @@ export class Deluge {
     this.config.password = password;
     this.cookie = Cookie.parse(res.headers['set-cookie'][0]);
     return res.body;
+  }
+
+  private async request<T extends object>(
+    method: string,
+    params: any[] = [],
+    needsAuth = true,
+    autoConnect = true,
+  ): Promise<Response<T>> {
+    if (this.msgId === 1024) {
+      this.msgId = 0;
+    }
+    if (needsAuth) {
+      await this.validateAuth();
+    }
+    if (needsAuth && autoConnect) {
+      const isConnected = await this.connected();
+      if (!isConnected) {
+        await this.connect();
+      }
+    }
+    const headers: any = {
+      Cookie: this.cookie && this.cookie.cookieString(),
+    };
+    const url = resolve(this.config.baseURL, 'json');
+    return got.post(url, {
+      json: true,
+      body: {
+        method,
+        params,
+        id: this.msgId++,
+      },
+      headers,
+    });
   }
 
   private async validateAuth() {

@@ -15,6 +15,7 @@ after_success:
   - bash <(curl -s https://codecov.io/bash)
   - npm run travis-deploy-once "npm run semantic-release"
   - npm run build:docs
+
 deploy:
   provider: pages
   skip_cleanup: true
