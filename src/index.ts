@@ -29,6 +29,27 @@ export interface UploadResponse {
   success: boolean;
 }
 
+export interface GetHostsResponse extends DefaultResponse {
+  /**
+   * host id - ddf084f5f3d7945597991008949ea7b51e6b3d93
+   * ip address - 127.0.0.1
+   * not sure? - 58846
+   * status - "Online"
+   */
+  result: [string, string, number, string];
+}
+
+export interface GetHostStatusResponse extends DefaultResponse {
+  /**
+   * host id - ddf084f5f3d7945597991008949ea7b51e6b3d93
+   * ip address - 127.0.0.1
+   * not sure? - 58846
+   * status - "Online"
+   * version - "1.3.15"
+   */
+  result: [string, string, number, 'Online' | 'Offline', string];
+}
+
 export interface TorrentContentFile {
   download: boolean;
   index: number;
@@ -91,6 +112,57 @@ export class Deluge {
     this.msgId = 0;
   }
 
+  async getHosts() {
+    const res = await this.request<GetHostsResponse>('web.get_hosts', [], true, false);
+    return res.body;
+  }
+
+  /**
+   * Gets host status
+   * @param host pass host id from `this.getHosts()`
+   */
+  async getHostStatus(host: string) {
+    const res = await this.request<GetHostStatusResponse>(
+      'web.get_host_status',
+      [host],
+      true,
+      false,
+    );
+    return res.body;
+  }
+
+  /**
+   * Connects deluge
+   * @param [host] index of host to use in result of get hosts
+   * @param [hostIdx] index of host to use in result of get hosts
+   */
+  async connect(selectedHost?: string, hostIdx = 0): Promise<DefaultResponse> {
+    let host = selectedHost;
+    if (!host) {
+      const hosts = await this.getHosts();
+      host = hosts.result[hostIdx][0];
+    }
+    if (!host) {
+      throw new Error('No hosts found');
+    }
+    const res = await this.request<DefaultResponse>('web.connect', [host], true, false);
+    return res.body;
+  }
+
+  async connected(): Promise<boolean> {
+    const res = await this.request<BooleanStatus>('web.connected', [], true, false);
+    return res.body.result;
+  }
+
+  /**
+   * Disconnects deluge - warning all instances connected to this client will also be disconnected.
+   * Other instances may also reconnect. Not really sure why you would want to disconnect
+   */
+  async disconnect() {
+    const res = await this.request<BooleanStatus>("web.disconnect", [], true, false);
+    return res.body;
+  }
+
   /**
    * Checks current session is valid
    * @returns true if valid
@@ -126,7 +198,7 @@ export class Deluge {
     this.resetSession();
     const res = await this.request<BooleanStatus>('auth.login', [this.config.password], false);
     if (!res.body.result || !res.headers || !res.headers['set-cookie']) {
-      throw new Error('Auth failed, does the password valided?');
+      throw new Error('Auth failed, incorrect password');
     }
     this.cookie = Cookie.parse(res.headers['set-cookie'][0]);
     return true;
@@ -136,12 +208,19 @@ export class Deluge {
     method: string,
     params: any[] = [],
     needsAuth = true,
+    autoConnect = true,
   ): Promise<Response<T>> {
     if (this.msgId === 1024) {
       this.msgId = 0;
     }
     if (needsAuth) {
       await this.validateAuth();
+    }
+    if (needsAuth && autoConnect) {
+      const isConnected = await this.connected();
+      if (!isConnected) {
+        await this.connect();
+      }
     }
     const headers: any = {
       Cookie: this.cookie && this.cookie.cookieString(),
@@ -178,6 +257,10 @@ export class Deluge {
 
   async upload(filePath: string): Promise<UploadResponse> {
     await this.validateAuth();
+    const isConnected = await this.connected();
+    if (!isConnected) {
+      await this.connect();
+    }
 
     const f = fs.createReadStream(filePath);
     const form = new FormData();
@@ -223,11 +306,17 @@ export class Deluge {
     return res.body;
   }
 
-  async changePassword(oldPassword: string, newPassword: string) {
+  async changePassword(password: string) {
     const res = await this.request<BooleanStatus>('auth.change_password', [
-      oldPassword,
-      newPassword,
+      this.config.password,
+      password,
     ]);
+    if (!res.body.result || !res.headers || !res.headers['set-cookie']) {
+      throw new Error('Old password incorrect');
+    }
+    // update current password to new password
+    this.config.password = password;
+    this.cookie = Cookie.parse(res.headers['set-cookie'][0]);
     return res.body;
   }
 
