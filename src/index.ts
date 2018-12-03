@@ -3,95 +3,19 @@ import got, { Response } from 'got';
 import { Cookie } from 'tough-cookie';
 import FormData from 'form-data';
 import fs from 'fs';
-
-export interface DelugeConfig {
-  baseURL: string;
-  password: string;
-}
-
-export interface DefaultResponse {
-  id: number;
-  error: null | string;
-  result: any;
-}
-
-export interface BooleanStatus extends DefaultResponse {
-  result: boolean;
-}
-
-export interface ListMethods extends DefaultResponse {
-  result: string[];
-}
-
-// {"files": ["/tmp/delugeweb-5Q9ttR/tmpL7xhth.torrent"], "success": true}
-export interface UploadResponse {
-  files: string[];
-  success: boolean;
-}
-
-export interface GetHostsResponse extends DefaultResponse {
-  /**
-   * host id - ddf084f5f3d7945597991008949ea7b51e6b3d93
-   * ip address - 127.0.0.1
-   * not sure? - 58846
-   * status - "Online"
-   */
-  result: [string, string, number, string];
-}
-
-export interface GetHostStatusResponse extends DefaultResponse {
-  /**
-   * host id - ddf084f5f3d7945597991008949ea7b51e6b3d93
-   * ip address - 127.0.0.1
-   * not sure? - 58846
-   * status - "Online"
-   * version - "1.3.15"
-   */
-  result: [string, string, number, 'Online' | 'Offline', string];
-}
-
-export interface TorrentContentFile {
-  download: boolean;
-  index: number;
-  length: number;
-  type: 'file';
-  /**
-   * has path when downloading folders
-   */
-  path?: string;
-}
-
-export interface TorrentContentDir {
-  download: true;
-  length: number;
-  type: 'dir';
-  contents: TorrentContentFile;
-}
-
-export interface TorrentInfo extends DefaultResponse {
-  result: {
-    files_tree: {
-      contents: {
-        [key: string]: TorrentContentDir | TorrentContentFile;
-      };
-    };
-    name: string;
-    info_hash: string;
-  };
-}
-
-export interface AddTorrentOptions {
-  file_priorities: any[];
-  add_paused: boolean;
-  compact_allocation: boolean;
-  download_location?: string;
-  max_connections: number;
-  max_download_speed: number;
-  max_upload_slots: number;
-  max_upload_speed: number;
-  prioritize_first_last_pieces: boolean;
-  move_completed_path?: string;
-}
+import {
+  DelugeConfig,
+  GetHostsResponse,
+  GetHostStatusResponse,
+  DefaultResponse,
+  BooleanStatus,
+  TorrentInfo,
+  ListMethods,
+  UploadResponse,
+  AddTorrentOptions,
+  TorrentListResponse,
+  DelugeSettings,
+} from './types';
 
 const defaults: DelugeConfig = {
   baseURL: 'http://localhost:8112/',
@@ -163,7 +87,7 @@ export class Deluge {
    * Other instances may also reconnect. Not really sure why you would want to disconnect
    */
   async disconnect(): Promise<boolean> {
-    const res = await this.request<BooleanStatus>("web.disconnect", [], true, false);
+    const res = await this.request<BooleanStatus>('web.disconnect', [], true, false);
     return res.body.result;
   }
 
@@ -289,6 +213,45 @@ export class Deluge {
     this.config.password = password;
     this.cookie = Cookie.parse(res.headers['set-cookie'][0]);
     return res.body;
+  }
+
+  async listTorrents(additionalFields: string[] = []) {
+    const fields = [
+      'distributed_copies',
+      'download_payload_rate',
+      'eta',
+      'is_auto_managed',
+      'max_download_speed',
+      'max_upload_speed',
+      'name',
+      'num_peers',
+      'num_seeds',
+      'progress',
+      'queue',
+      'ratio',
+      'save_path',
+      'seeds_peers_ratio',
+      'state',
+      'time_added',
+      'total_done',
+      'total_peers',
+      'total_seeds',
+      'total_uploaded',
+      'total_wanted',
+      'tracker_host',
+      'upload_payload_rate',
+      ...additionalFields,
+    ];
+    const req = await this.request<TorrentListResponse>('web.update_ui', [
+      [...new Set(fields)],
+      {},
+    ]);
+    return req.body;
+  }
+
+  async setConfig(config: DelugeSettings) {
+    const req = await this.request<DefaultResponse>('core.set_config', [config]);
+    return req.body;
   }
 
   private async request<T extends object>(

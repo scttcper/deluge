@@ -31,27 +31,29 @@
   "dependencies": {
     "form-data": "2.3.3",
     "got": "9.3.2",
-    "tough-cookie": "2.4.3"
+    "tough-cookie": "2.5.0"
   },
   "devDependencies": {
     "@types/form-data": "2.2.1",
-    "@types/got": "9.2.0",
-    "@types/jest": "23.3.9",
-    "@types/node": "10.12.10",
+    "@types/got": "9.2.1",
+    "@types/jest": "23.3.10",
+    "@types/node": "10.12.11",
+    "@types/p-wait-for": "^2.0.0",
     "@types/tough-cookie": "^2.3.4",
     "jest": "23.6.0",
-    "microbundle": "0.7.0",
-    "prettier": "1.15.2",
+    "microbundle": "0.8.1",
+    "p-wait-for": "2.0.1",
+    "prettier": "1.15.3",
     "rimraf": "2.6.2",
-    "semantic-release": "15.12.1",
+    "semantic-release": "15.12.3",
     "travis-deploy-once": "5.0.9",
     "ts-jest": "23.10.5",
     "ts-node": "7.0.1",
     "tslint": "5.11.0",
-    "tslint-config-prettier": "1.16.0",
+    "tslint-config-prettier": "1.17.0",
     "tslint-xo": "0.10.0",
     "typedoc": "0.13.0",
-    "typescript": "3.1.6"
+    "typescript": "3.2.1"
   },
   "publishConfig": {
     "access": "public"

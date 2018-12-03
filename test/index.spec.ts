@@ -1,5 +1,7 @@
-import { Deluge } from '../src/index';
 import path from 'path';
+import pWaitFor from 'p-wait-for';
+
+import { Deluge } from '../src/index';
 
 const baseURL = 'http://localhost:8112/';
 const torrentFile = path.join(__dirname + '/ubuntu-18.04.1-desktop-amd64.iso.torrent');
@@ -57,5 +59,24 @@ describe('Deluge', () => {
     const deluge = new Deluge({ baseURL });
     const res = await deluge.addTorrent(torrentFile);
     expect(res.result).toBe(true);
+  });
+  it('should list torrents', async () => {
+    const deluge = new Deluge({ baseURL });
+    await deluge.addTorrent(torrentFile);
+    await pWaitFor(
+      async () => {
+        const r = await deluge.listTorrents();
+        return Object.keys(r.result.torrents).length === 1;
+      },
+      { timeout: 10000 },
+    );
+    const res = await deluge.listTorrents();
+    expect(res.result.torrents).toBeDefined();
+    const keys = Object.keys(res.result.torrents);
+    expect(keys.length).toEqual(1);
+    for (const key of keys) {
+      const torrent = res.result.torrents[key];
+      expect(torrent.is_auto_managed).toBe(true);
+    }
   });
 });
