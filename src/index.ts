@@ -15,6 +15,13 @@ import {
   AddTorrentOptions,
   TorrentListResponse,
   DelugeSettings,
+  PluginInfo,
+  ConfigResponse,
+  PluginsListResponse,
+  TorrentOptions,
+  TorrentFiles,
+  TorrentStatus,
+  Tracker,
 } from './types';
 
 const defaults: DelugeConfig = {
@@ -201,6 +208,11 @@ export class Deluge {
     return res.body;
   }
 
+  async removeTorrent(torrentId: string, removeData: boolean) {
+    const req = await this.request<BooleanStatus>('core.remove_torrent', [torrentId, removeData]);
+    return req.body;
+  }
+
   async changePassword(password: string) {
     const res = await this.request<BooleanStatus>('auth.change_password', [
       this.config.password,
@@ -249,8 +261,82 @@ export class Deluge {
     return req.body;
   }
 
+  /**
+   * fields ex - ['peers']
+   */
+  async getTorrentStatus(torrentId: string, fields: string[] = []) {
+    const req = await this.request<TorrentStatus>('web.get_torrent_status', [[torrentId], fields]);
+    return req.body;
+  }
+
+  async getTorrentFiles(torrentId: string) {
+    const req = await this.request<TorrentFiles>('web.get_torrent_files', [[torrentId]]);
+    return req.body;
+  }
+
+  async pauseTorrent(torrentId: string) {
+    const req = await this.request<DefaultResponse>('core.pause_torrent', [[torrentId]]);
+    return req.body;
+  }
+
+  async resumeTorrent(torrentId: string) {
+    const req = await this.request<DefaultResponse>('core.resume_torrent', [[torrentId]]);
+    return req.body;
+  }
+
+  async setTorrentOptions(torrentId: string, options: Partial<TorrentOptions> = {}) {
+    const req = await this.request<DefaultResponse>('core.set_torrent_options', [
+      [torrentId],
+      options,
+    ]);
+    return req.body;
+  }
+
+  async setTorrentTrackers(torrentId: string, trackers: Tracker[] = []) {
+    const req = await this.request<DefaultResponse>('core.set_torrent_trackers', [
+      [torrentId],
+      trackers,
+    ]);
+    return req.body;
+  }
+
+  async queueUp(torrentId: string) {
+    const req = await this.request<DefaultResponse>('core.queue_up', [[torrentId]]);
+    return req.body;
+  }
+
+  async queueDown(torrentId: string) {
+    const req = await this.request<DefaultResponse>('core.queue_down', [[torrentId]]);
+    return req.body;
+  }
+
+  async getConfig() {
+    const req = await this.request<ConfigResponse>('core.get_config', []);
+    return req.body;
+  }
+
   async setConfig(config: DelugeSettings) {
     const req = await this.request<DefaultResponse>('core.set_config', [config]);
+    return req.body;
+  }
+
+  async getPlugins() {
+    const req = await this.request<PluginsListResponse>('web.get_plugins', []);
+    return req.body;
+  }
+
+  async getPluginInfo(plugins: string[]) {
+    const req = await this.request<PluginInfo>('web.get_plugin_info', plugins);
+    return req.body;
+  }
+
+  async enablePlugin(plugins: string[]) {
+    const req = await this.request<DefaultResponse>('core.enable_plugin', plugins);
+    return req.body;
+  }
+
+  async disablePlugin(plugins: string[]) {
+    const req = await this.request<DefaultResponse>('core.disable_plugin', plugins);
     return req.body;
   }
 

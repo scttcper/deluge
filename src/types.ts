@@ -146,6 +146,92 @@ export interface Torrent {
   [key: string]: any;
 }
 
+export interface PluginInfo extends DefaultResponse {
+  result: {
+    Name: string;
+    License: string;
+    Author: string;
+    'Home-page': string;
+    Summary: string;
+    Platform: string;
+    Version: string;
+    'Author-email': string;
+    Description: string;
+  };
+}
+
+export interface ConfigResponse extends DefaultResponse {
+  result: DelugeSettings;
+}
+
+export interface PluginsListResponse extends DefaultResponse {
+  result: {
+    enabled_plugins: string[];
+    available_plugins: string[];
+  };
+}
+
+export interface Tracker {
+  tier: number;
+  url: string;
+}
+
+export interface TorrentStatus extends DefaultResponse {
+  result: {
+    max_download_speed?: number;
+    stop_ratio?: number;
+    is_auto_managed?: true;
+    move_completed_path?: string;
+    private?: boolean;
+    stop_at_ratio?: boolean;
+    max_upload_speed?: number;
+    remove_at_ratio?: boolean;
+    max_upload_slots?: number;
+    prioritize_first_last?: boolean;
+    move_completed?: boolean;
+    max_connections?: number;
+    comment?: string;
+    name?: string;
+    total_size?: number;
+    num_files?: number;
+    tracker?: string;
+    save_path?: string;
+    message?: string;
+    peers?: TorrentPeers;
+    trackers?: Tracker;
+    [key: string]: any;
+  };
+}
+
+export interface TorrentPeers {
+  down_speed: number;
+  ip: string;
+  up_speed: number;
+  client: string;
+  country: string;
+  progress: number;
+  seed: number;
+}
+
+export interface TorrentFiles extends DefaultResponse {
+  result: { [key: string]: TorrentContentDir | TorrentContentFile };
+}
+
+export interface TorrentOptions {
+  max_download_speed: number;
+  max_upload_speed: number;
+  max_connections: number;
+  max_upload_slots: number;
+  prioritize_first_last: boolean;
+  is_auto_managed: boolean;
+  stop_at_ratio: boolean;
+  stop_ratio: number;
+  remove_at_ratio: boolean;
+  move_completed: boolean;
+  move_completed_path: string;
+  super_seeding: boolean;
+}
+
 // https://github.com/biwin/deluge/blob/1.3-stable/deluge/core/preferencesmanager.py
 export interface DelugeSettings {
   /**
@@ -189,51 +275,168 @@ export interface DelugeSettings {
    * default: true
    */
   random_outgoing_ports: boolean;
-  // "listen_interface": "",
-  // "copy_torrent_file": False,
-  // "del_copy_torrent_file": False,
-  // "torrentfiles_location": deluge.common.get_default_download_dir(),
-  // "plugins_location": os.path.join(deluge.configmanager.get_config_dir(), "plugins"),
-  // "prioritize_first_last_pieces": False,
-  // "dht": True,
-  // "upnp": True,
-  // "natpmp": True,
-  // "utpex": True,
-  // "lsd": True,
-  // "enc_in_policy": 1,
-  // "enc_out_policy": 1,
-  // "enc_level": 2,
-  // "enc_prefer_rc4": True,
-  // "max_connections_global": 200,
-  // "max_upload_speed": -1.0,
-  // "max_download_speed": -1.0,
-  // "max_upload_slots_global": 4,
-  // "max_half_open_connections": (lambda: deluge.common.windows_check() and (lambda: deluge.common.vista_check() and 4 or 8)() or 50)(),
-  // "max_connections_per_second": 20,
-  // "ignore_limits_on_local_network": True,
-  // "max_connections_per_torrent": -1,
-  // "max_upload_slots_per_torrent": -1,
-  // "max_upload_speed_per_torrent": -1,
-  // "max_download_speed_per_torrent": -1,
-  // "enabled_plugins": [],
+  /**
+   * IP address to listen for BitTorrent connections
+   * default: ""
+   */
+  listen_interface: string;
+  /**
+   * enable torrent copy dir
+   * default: false
+   */
+  copy_torrent_file: boolean;
+  /**
+   * Copy of .torrent files to:
+   */
+  torrentfiles_location: string;
+  /**
+   * default: False
+   */
+  del_copy_torrent_file: boolean;
+  plugins_location: string;
+  /**
+   * Prioritize first and last pieces of torrent
+   * default: False
+   */
+  prioritize_first_last_pieces: boolean;
+  /**
+   * default: True
+   */
+  dht: boolean;
+  /**
+   * default: True
+   */
+  upnp: boolean;
+  /**
+   * default: True
+   */
+  natpmp: boolean;
+  /**
+   * default: True
+   */
+  utpex: boolean;
+  /**
+   * default: True
+   */
+  lsd: boolean;
+  /**
+   * default: 1
+   */
+  enc_in_policy: number;
+  /**
+   * default: 1
+   */
+  enc_out_policy: number;
+  /**
+   * default: 2
+   */
+  enc_level: number;
+  /**
+   * default: True
+   */
+  enc_prefer_rc4: boolean;
+  /**
+   * default: 200
+   */
+  max_connections_global: number;
+  /**
+   * default: -1
+   */
+  max_upload_speed: number;
+  /**
+   * default: -1
+   */
+  max_download_speed: number;
+  /**
+   * default: 4
+   */
+  max_upload_slots_global: number;
+  /**
+   * default: 50
+   */
+  max_half_open_connections: number;
+  /**
+   * default: 20
+   */
+  max_connections_per_second: number;
+  /**
+   * default: True
+   */
+  ignore_limits_on_local_network: boolean;
+  /**
+   * default: -1
+   */
+  max_connections_per_torrent: number;
+  /**
+   * default: -1
+   */
+  max_upload_slots_per_torrent: number;
+  /**
+   * default: -1
+   */
+  max_upload_speed_per_torrent: number;
+  /**
+   * default: -1
+   */
+  max_download_speed_per_torrent: number;
+  enabled_plugins: [];
   // "autoadd_location": deluge.common.get_default_download_dir(),
-  // "autoadd_enable": False,
-  // "add_paused": False,
-  // "max_active_seeding": 5,
-  // "max_active_downloading": 3,
-  // "max_active_limit": 8,
-  // "dont_count_slow_torrents": False,
-  // "queue_new_to_top": False,
-  // "stop_seed_at_ratio": False,
-  // "remove_seed_at_ratio": False,
-  // "stop_seed_ratio": 2.00,
-  // "share_ratio_limit": 2.00,
-  // "seed_time_ratio_limit": 7.00,
-  // "seed_time_limit": 180,
-  // "auto_managed": True,
-  // "move_completed": False,
-  // "move_completed_path": deluge.common.get_default_download_dir(),
-  // "new_release_check": True,
+  /**
+   * default: False
+   */
+  autoadd_enable: boolean;
+  /**
+   * default: False
+   */
+  add_paused: boolean;
+  max_active_seeding: 5;
+  max_active_downloading: 3;
+  max_active_limit: 8;
+  /**
+   * default: False
+   */
+  dont_count_slow_torrents: boolean;
+  /**
+   * default: False
+   */
+  queue_new_to_top: boolean;
+  /**
+   * default: False
+   */
+  stop_seed_at_ratio: boolean;
+  /**
+   * default: False
+   */
+  remove_seed_at_ratio: boolean;
+  /**
+   * default: 2
+   */
+  stop_seed_ratio: number;
+  /**
+   * default: 2
+   */
+  share_ratio_limit: number;
+  /**
+   * default: 7
+   */
+  seed_time_ratio_limit: number;
+  /**
+   * default: 180
+   */
+  seed_time_limit: number;
+  /**
+   * default: True
+   */
+  auto_managed: boolean;
+  /**
+   * default: False
+   */
+  move_completed: boolean;
+  move_completed_path: string;
+  /**
+   * default: True
+   */
+  new_release_check: boolean;
   proxies?: {
     peer: {
       type: 0 | 1 | 2 | 3 | 4 | 5;
@@ -274,7 +477,16 @@ export interface DelugeSettings {
    * default: true
    */
   rate_limit_ip_overhead: boolean;
-  // "geoip_db_location": "/usr/share/GeoIP/GeoIP.dat",
-  // "cache_size": 512,
-  // "cache_expiry": 60
+  /**
+   * default: '/usr/share/GeoIP/GeoIP.dat'
+   */
+  geoip_db_location: string;
+  /**
+   * default: 512
+   */
+  cache_size: number;
+  /**
+   * default: 60
+   */
+  cache_expiry: number;
 }
