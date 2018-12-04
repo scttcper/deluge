@@ -33,6 +33,7 @@ export interface GetHostsResponse extends DefaultResponse {
   result: [string, string, number, string];
 }
 
+export type HostStatus = 'Online' | 'Offline' | 'Connected';
 export interface GetHostStatusResponse extends DefaultResponse {
   /**
    * host id - ddf084f5f3d7945597991008949ea7b51e6b3d93
@@ -41,7 +42,7 @@ export interface GetHostStatusResponse extends DefaultResponse {
    * status - "Online"
    * version - "1.3.15"
    */
-  result: [string, string, number, 'Online' | 'Offline', string];
+  result: [string, string, number, HostStatus, string];
 }
 
 export interface TorrentContentFile {
