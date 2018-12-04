@@ -139,6 +139,12 @@ export class Deluge {
     return true;
   }
 
+  async logout() {
+    const res = await this.request<BooleanStatus>("auth.delete_session");
+    this.resetSession();
+    return res.body;
+  }
+
   /**
    *
    * @param tmpPath use path returned from upload torrent looks like `'/tmp/delugeweb-DfEsgR/tmpD3rujY.torrent'`
