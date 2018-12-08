@@ -29,6 +29,44 @@ const defaults: DelugeConfig = {
   password: 'deluge',
 };
 
+export const TORRENT_STATUS_FIELDS = [
+  'total_done',
+  'total_payload_download',
+  'total_uploaded',
+  'total_payload_upload',
+  'next_announce',
+  'tracker_status',
+  'num_pieces',
+  'piece_length',
+  'is_auto_managed',
+  'active_time',
+  'seeding_time',
+  'seed_rank',
+  'queue',
+  'name',
+  'total_wanted',
+  'state',
+  'progress',
+  'num_seeds',
+  'total_seeds',
+  'num_peers',
+  'total_peers',
+  'download_payload_rate',
+  'upload_payload_rate',
+  'eta',
+  'ratio',
+  'distributed_copies',
+  'is_auto_managed',
+  'time_added',
+  'tracker_host',
+  'save_path',
+  'total_done',
+  'total_uploaded',
+  'max_download_speed',
+  'max_upload_speed',
+  'seeds_peers_ratio',
+];
+
 export class Deluge {
   msgId = 0;
   cookie?: Cookie;
@@ -129,7 +167,7 @@ export class Deluge {
    * Login deluge
    * @returns true if success
    */
-  async login() {
+  async login(): Promise<boolean> {
     this.resetSession();
     const res = await this.request<BooleanStatus>('auth.login', [this.config.password], false);
     if (!res.body.result || !res.headers || !res.headers['set-cookie']) {
@@ -139,14 +177,18 @@ export class Deluge {
     return true;
   }
 
-  async logout() {
-    const res = await this.request<BooleanStatus>("auth.delete_session");
+  /**
+   * Logout deluge
+   * @returns true if success
+   */
+  async logout(): Promise<boolean> {
+    const res = await this.request<BooleanStatus>('auth.delete_session');
     this.resetSession();
-    return res.body;
+    return res.body.result;
   }
 
   /**
-   *
+   * used to get torrent info before adding
    * @param tmpPath use path returned from upload torrent looks like `'/tmp/delugeweb-DfEsgR/tmpD3rujY.torrent'`
    */
   async getTorrentInfo(tmpPath: string) {
@@ -214,7 +256,12 @@ export class Deluge {
     return res.body;
   }
 
-  async removeTorrent(torrentId: string, removeData: boolean) {
+  /**
+   *
+   * @param torrentId torrent id from list torrents
+   * @param removeData true will delete all data from disk
+   */
+  async removeTorrent(torrentId: string, removeData = true) {
     const req = await this.request<BooleanStatus>('core.remove_torrent', [torrentId, removeData]);
     return req.body;
   }
@@ -268,15 +315,19 @@ export class Deluge {
   }
 
   /**
-   * fields ex - ['peers']
+   * get torrent state/status
+   * @param fields fields ex - `['peers']`
    */
-  async getTorrentStatus(torrentId: string, fields: string[] = []) {
-    const req = await this.request<TorrentStatus>('web.get_torrent_status', [[torrentId], fields]);
+  async getTorrentStatus(torrentId: string, fields: string[] = TORRENT_STATUS_FIELDS) {
+    const req = await this.request<TorrentStatus>('web.get_torrent_status', [torrentId, fields]);
     return req.body;
   }
 
+  /**
+   * Get list of files for a torrent
+   */
   async getTorrentFiles(torrentId: string) {
-    const req = await this.request<TorrentFiles>('web.get_torrent_files', [[torrentId]]);
+    const req = await this.request<TorrentFiles>('web.get_torrent_files', [torrentId]);
     return req.body;
   }
 
@@ -321,7 +372,7 @@ export class Deluge {
     return req.body;
   }
 
-  async setConfig(config: DelugeSettings) {
+  async setConfig(config: Partial<DelugeSettings>) {
     const req = await this.request<DefaultResponse>('core.set_config', [config]);
     return req.body;
   }
@@ -352,7 +403,7 @@ export class Deluge {
     needsAuth = true,
     autoConnect = true,
   ): Promise<Response<T>> {
-    if (this.msgId === 1024) {
+    if (this.msgId === 4096) {
       this.msgId = 0;
     }
     if (needsAuth) {

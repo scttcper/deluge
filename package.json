@@ -22,9 +22,9 @@
     "build": "microbundle build --target node --format cjs,es -o dist",
     "postbuild": "cp package.json dist && cp LICENSE dist && cp README.md dist && rimraf dist/test",
     "build:docs": "typedoc --out docs --target es6 --theme minimal --mode file src && touch docs/.nojekyll",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:ci": "jest --coverage --no-cache",
+    "test": "jest --runInBand",
+    "test:watch": "jest --watch --runInBand",
+    "test:ci": "jest --runInBand --coverage --no-cache",
     "travis-deploy-once": "travis-deploy-once --pro",
     "semantic-release": "cd dist && semantic-release"
   },
@@ -41,7 +41,7 @@
     "@types/p-wait-for": "^2.0.0",
     "@types/tough-cookie": "2.3.4",
     "jest": "23.6.0",
-    "microbundle": "0.8.3",
+    "microbundle": "0.7.0",
     "p-wait-for": "2.0.1",
     "prettier": "1.15.3",
     "rimraf": "2.6.2",
@@ -53,7 +53,7 @@
     "tslint-config-prettier": "1.17.0",
     "tslint-xo": "0.10.0",
     "typedoc": "0.13.0",
-    "typescript": "3.2.1"
+    "typescript": "3.2.2"
   },
   "publishConfig": {
     "access": "public"
