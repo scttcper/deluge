@@ -69,9 +69,9 @@ export const TORRENT_STATUS_FIELDS = [
 ];
 
 export class Deluge {
-  msgId = 0;
-  cookie?: Cookie;
   config: DelugeConfig;
+  private msgId = 0;
+  private cookie?: Cookie;
 
   constructor(options: Partial<DelugeConfig>) {
     this.config = { ...defaults, ...options };
