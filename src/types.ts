@@ -1,5 +1,12 @@
 export interface DelugeConfig {
+  /**
+   * baseurl ex - `'http://localhost:8112/'`
+   */
   baseURL: string;
+  /**
+   * ex - `'/json'`
+   */
+  path: string;
   password: string;
 }
 

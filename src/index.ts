@@ -26,6 +26,7 @@ import {
 
 const defaults: DelugeConfig = {
   baseURL: 'http://localhost:8112/',
+  path: '/json',
   password: 'deluge',
 };
 
@@ -74,10 +75,6 @@ export class Deluge {
 
   constructor(options: Partial<DelugeConfig>) {
     this.config = { ...defaults, ...options };
-    // baseURL requires end slash to get to json route
-    if (this.config.baseURL[this.config.baseURL.length - 1] !== '/') {
-      this.config.baseURL += '/';
-    }
   }
 
   resetSession() {
@@ -397,7 +394,7 @@ export class Deluge {
     return req.body;
   }
 
-  private async request<T extends object>(
+  async request<T extends object>(
     method: string,
     params: any[] = [],
     needsAuth = true,
@@ -418,7 +415,7 @@ export class Deluge {
     const headers: any = {
       Cookie: this.cookie && this.cookie.cookieString(),
     };
-    const url = resolve(this.config.baseURL, 'json');
+    const url = resolve(this.config.baseURL, this.config.path);
     return got.post(url, {
       json: true,
       body: {
