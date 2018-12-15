@@ -25,7 +25,6 @@
     "test": "jest --runInBand",
     "test:watch": "jest --watch --runInBand",
     "test:ci": "jest --runInBand --coverage --no-cache",
-    "travis-deploy-once": "travis-deploy-once --pro",
     "semantic-release": "cd dist && semantic-release"
   },
   "dependencies": {
@@ -46,7 +45,6 @@
     "prettier": "1.15.3",
     "rimraf": "2.6.2",
     "semantic-release": "15.12.4",
-    "travis-deploy-once": "5.0.9",
     "ts-jest": "23.10.5",
     "ts-node": "7.0.1",
     "tslint": "5.11.0",
