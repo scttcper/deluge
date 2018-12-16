@@ -167,7 +167,7 @@ describe('Deluge', () => {
     const deluge = new Deluge({ baseURL });
     const res = await setupTorrent(deluge);
     const key = Object.keys(res.result.torrents)[0];
-    await deluge.forceRecheck(key);
+    await deluge.verifyTorrent(key);
   });
   it('should pause/resume torrents', async () => {
     const deluge = new Deluge({ baseURL });
