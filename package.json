@@ -7,7 +7,6 @@
   "repository": "typectrl/deluge",
   "keywords": [
     "deluge",
-    "axios",
     "typescript"
   ],
   "source": "src/index.ts",
