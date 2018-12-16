@@ -157,11 +157,17 @@ describe('Deluge', () => {
   it('should move torrents in queue', async () => {
     const deluge = new Deluge({ baseURL });
     const res = await setupTorrent(deluge);
-    const keys = Object.keys(res.result.torrents);
-    for (const key of keys) {
-      await deluge.queueUp(key);
-      await deluge.queueDown(key);
-    }
+    const key = Object.keys(res.result.torrents)[0];
+    await deluge.queueUp(key);
+    await deluge.queueDown(key);
+    await deluge.queueTop(key);
+    await deluge.queueBottom(key);
+  });
+  it('should force recheck torrent', async () => {
+    const deluge = new Deluge({ baseURL });
+    const res = await setupTorrent(deluge);
+    const key = Object.keys(res.result.torrents)[0];
+    await deluge.forceRecheck(key);
   });
   it('should pause/resume torrents', async () => {
     const deluge = new Deluge({ baseURL });

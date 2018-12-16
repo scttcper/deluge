@@ -354,6 +354,21 @@ export class Deluge {
     return req.body;
   }
 
+  async verifyTorrent(torrentId: string) {
+    const req = await this.request<DefaultResponse>('core.force_recheck', [[torrentId]]);
+    return req.body;
+  }
+
+  async queueTop(torrentId: string) {
+    const req = await this.request<DefaultResponse>('core.queue_top', [[torrentId]]);
+    return req.body;
+  }
+
+  async queueBottom(torrentId: string) {
+    const req = await this.request<DefaultResponse>('core.queue_bottom', [[torrentId]]);
+    return req.body;
+  }
+
   async queueUp(torrentId: string) {
     const req = await this.request<DefaultResponse>('core.queue_up', [[torrentId]]);
     return req.body;
