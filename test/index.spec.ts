@@ -1,5 +1,6 @@
 import path from 'path';
 import pWaitFor from 'p-wait-for';
+import fs from 'fs';
 
 import { Deluge } from '../src/index';
 
@@ -128,9 +129,20 @@ describe('Deluge', () => {
     expect(res.files.length).toBe(1);
     expect(res.success).toBe(true);
   });
-  it('should add torrent', async () => {
+  it('should add torrent from file path string', async () => {
     const deluge = new Deluge({ baseURL });
     const res = await deluge.addTorrent(torrentFile);
+    expect(res.result).toBe(true);
+  });
+  it('should add torrent from file buffer', async () => {
+    const deluge = new Deluge({ baseURL });
+    const res = await deluge.addTorrent(fs.readFileSync(torrentFile));
+    expect(res.result).toBe(true);
+  });
+  it('should add torrent from file contents base64', async () => {
+    const deluge = new Deluge({ baseURL });
+    const contents = Buffer.from(fs.readFileSync(torrentFile)).toString('base64');
+    const res = await deluge.addTorrent(contents);
     expect(res.result).toBe(true);
   });
   it('should get torrent status', async () => {

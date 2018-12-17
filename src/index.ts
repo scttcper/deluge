@@ -164,16 +164,23 @@ export class Deluge {
     return req.body;
   }
 
-  async upload(filePath: string): Promise<UploadResponse> {
+  async upload(torrent: string | Buffer): Promise<UploadResponse> {
     await this.validateAuth();
     const isConnected = await this.connected();
     if (!isConnected) {
       await this.connect();
     }
 
-    const f = fs.createReadStream(filePath);
     const form = new FormData();
-    form.append('file', f);
+    if (typeof torrent === 'string') {
+      if (fs.existsSync(torrent)) {
+        form.append('file', Buffer.from(fs.readFileSync(torrent)));
+      } else {
+        form.append('file', Buffer.from(torrent, 'base64'));
+      }
+    } else {
+      form.append('file', torrent);
+    }
 
     const url = resolve(this.config.baseURL, 'upload');
     const res = await got.post(url, {
@@ -183,8 +190,8 @@ export class Deluge {
     return JSON.parse(res.body);
   }
 
-  async addTorrent(filePath: string, config: Partial<AddTorrentOptions> = {}) {
-    const upload = await this.upload(filePath);
+  async addTorrent(torrent: string | Buffer, config: Partial<AddTorrentOptions> = {}) {
+    const upload = await this.upload(torrent);
     if (!upload.success || !upload.files.length) {
       throw new Error('Failed to upload');
     }
