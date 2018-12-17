@@ -35,7 +35,7 @@ export class Deluge {
   private msgId = 0;
   private cookie?: Cookie;
 
-  constructor(options: Partial<DelugeConfig>) {
+  constructor(options: Partial<DelugeConfig> = {}) {
     this.config = { ...defaults, ...options };
   }
 
@@ -65,8 +65,8 @@ export class Deluge {
 
   /**
    * Connects deluge
-   * @param [host] index of host to use in result of get hosts
-   * @param [hostIdx] index of host to use in result of get hosts
+   * @param host index of host to use in result of get hosts
+   * @param hostIdx index of host to use in result of get hosts
    */
   async connect(selectedHost?: string, hostIdx = 0): Promise<DefaultResponse> {
     let host = selectedHost;
