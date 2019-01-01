@@ -114,7 +114,8 @@ export class Deluge {
         if (check.body && check.body.result) {
           return true;
         }
-      } catch {
+      // tslint:disable-next-line:no-unused
+      } catch (e) {
         // do nothing
       }
     }
