@@ -2,6 +2,8 @@
 
 > TypeScript api wrapper for [deluge](https://deluge-torrent.org/) using [got](https://github.com/sindresorhus/got)
 
+The advantage to writing your own http requests is the auth is already setup and type definitions are availabe for all responses.
+
 ### Install
 
 ```bash
@@ -20,6 +22,42 @@ const deluge = new Deluge({
 
 async function main() {
   const res = await deluge.listTorrents();
+  // listTorrents returns a TorrentListResponse and types are available
   console.log(res.result);
 }
 ```
+
+### API
+
+- getHosts
+- getHostStatus
+- connect
+- connected
+- disconnect
+- checkSession
+- login
+- logout
+- getTorrentInfo
+- listMethods
+- upload
+- addTorrent
+- removeTorrent
+- changePassword
+- listTorrents
+- getTorrentStatus
+- getTorrentFiles
+- pauseTorrent
+- resumeTorrent
+- setTorrentOptions
+- setTorrentTrackers
+- verifyTorrent
+- queueTop
+- queueBottom
+- queueUp
+- queueDown
+- getConfig
+- setConfig
+- getPlugins
+- getPluginInfo
+- enablePlugin
+- disablePlugin
