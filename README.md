@@ -29,35 +29,4 @@ async function main() {
 
 ### API
 
-- getHosts
-- getHostStatus
-- connect
-- connected
-- disconnect
-- checkSession
-- login
-- logout
-- getTorrentInfo
-- listMethods
-- upload
-- addTorrent
-- removeTorrent
-- changePassword
-- listTorrents
-- getTorrentStatus
-- getTorrentFiles
-- pauseTorrent
-- resumeTorrent
-- setTorrentOptions
-- setTorrentTrackers
-- verifyTorrent
-- queueTop
-- queueBottom
-- queueUp
-- queueDown
-- getConfig
-- setConfig
-- getPlugins
-- getPluginInfo
-- enablePlugin
-- disablePlugin
+Docs: https://typectrl.github.io/deluge/classes/deluge.html

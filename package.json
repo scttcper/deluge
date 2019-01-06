@@ -33,8 +33,8 @@
   },
   "devDependencies": {
     "@types/form-data": "2.2.1",
-    "@types/got": "9.2.2",
-    "@types/jest": "23.3.11",
+    "@types/got": "9.3.0",
+    "@types/jest": "23.3.12",
     "@types/node": "10.12.18",
     "@types/p-wait-for": "2.0.0",
     "@types/tough-cookie": "2.3.4",
@@ -42,14 +42,14 @@
     "microbundle": "0.9.0",
     "p-wait-for": "2.0.1",
     "prettier": "1.15.3",
-    "rimraf": "2.6.2",
+    "rimraf": "2.6.3",
     "semantic-release": "15.13.2",
     "ts-jest": "23.10.5",
     "ts-node": "7.0.1",
     "tslint": "5.12.0",
     "tslint-config-prettier": "1.17.0",
     "tslint-xo": "0.11.0",
-    "typedoc": "0.13.0",
+    "typedoc": "0.14.0",
     "typescript": "3.2.2"
   },
   "publishConfig": {
