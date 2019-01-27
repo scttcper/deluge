@@ -44,6 +44,7 @@ describe('Deluge', () => {
   it('should connect', async () => {
     const deluge = new Deluge({ baseURL });
     const res = await deluge.connect();
+    // tslint:disable-next-line:no-null-keyword
     expect(res.result).toBe(null);
   });
   it('should get plugins', async () => {
