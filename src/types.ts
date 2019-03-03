@@ -37,7 +37,7 @@ export interface GetHostsResponse extends DefaultResponse {
    * not sure? - 58846
    * status - "Online"
    */
-  result: [string, string, number, string];
+  result: [string, string, number, string][];
 }
 
 export type HostStatus = 'Online' | 'Offline' | 'Connected';

@@ -32,16 +32,18 @@ const defaults: DelugeConfig = {
 
 export class Deluge {
   config: DelugeConfig;
-  private msgId = 0;
-  private cookie?: Cookie;
+
+  private _msgId = 0;
+
+  private _cookie?: Cookie;
 
   constructor(options: Partial<DelugeConfig> = {}) {
     this.config = { ...defaults, ...options };
   }
 
   resetSession() {
-    this.cookie = undefined;
-    this.msgId = 0;
+    this._cookie = undefined;
+    this._msgId = 0;
   }
 
   async getHosts() {
@@ -74,9 +76,11 @@ export class Deluge {
       const hosts = await this.getHosts();
       host = hosts.result[hostIdx][0];
     }
+
     if (!host) {
       throw new Error('No hosts found');
     }
+
     const res = await this.request<DefaultResponse>('web.connect', [host], true, false);
     return res.body;
   }
@@ -101,24 +105,28 @@ export class Deluge {
    */
   async checkSession() {
     // cookie is missing or expires in x seconds
-    if (this.cookie) {
-      if (this.cookie.TTL() < 5000) {
+    if (this._cookie) {
+      // eslint-disable-next-line new-cap
+      if (this._cookie.TTL() < 5000) {
         this.resetSession();
         return false;
       }
+
       return true;
     }
-    if (this.cookie) {
+
+    if (this._cookie) {
       try {
         const check = await this.request<BooleanStatus>('auth.check_session', undefined, false);
         if (check.body && check.body.result) {
           return true;
         }
       // tslint:disable-next-line:no-unused
-      } catch (e) {
+      } catch {
         // do nothing
       }
     }
+
     this.resetSession();
     return false;
   }
@@ -133,7 +141,8 @@ export class Deluge {
     if (!res.body.result || !res.headers || !res.headers['set-cookie']) {
       throw new Error('Auth failed, incorrect password');
     }
-    this.cookie = Cookie.parse(res.headers['set-cookie'][0]);
+
+    this._cookie = Cookie.parse(res.headers['set-cookie'][0]);
     return true;
   }
 
@@ -166,7 +175,7 @@ export class Deluge {
   }
 
   async upload(torrent: string | Buffer): Promise<UploadResponse> {
-    await this.validateAuth();
+    await this._validateAuth();
     const isConnected = await this.connected();
     if (!isConnected) {
       await this.connect();
@@ -241,9 +250,10 @@ export class Deluge {
     if (!res.body.result || !res.headers || !res.headers['set-cookie']) {
       throw new Error('Old password incorrect');
     }
+
     // update current password to new password
     this.config.password = password;
-    this.cookie = Cookie.parse(res.headers['set-cookie'][0]);
+    this._cookie = Cookie.parse(res.headers['set-cookie'][0]);
     return res.body;
   }
 
@@ -423,20 +433,23 @@ export class Deluge {
     needsAuth = true,
     autoConnect = true,
   ): Promise<Response<T>> {
-    if (this.msgId === 4096) {
-      this.msgId = 0;
+    if (this._msgId === 4096) {
+      this._msgId = 0;
     }
+
     if (needsAuth) {
-      await this.validateAuth();
+      await this._validateAuth();
     }
+
     if (needsAuth && autoConnect) {
       const isConnected = await this.connected();
       if (!isConnected) {
         await this.connect();
       }
     }
+
     const headers: any = {
-      Cookie: this.cookie && this.cookie.cookieString(),
+      Cookie: this._cookie && this._cookie.cookieString(),
     };
     const url = resolve(this.config.baseURL, this.config.path);
     return got.post(url, {
@@ -444,17 +457,18 @@ export class Deluge {
       body: {
         method,
         params,
-        id: this.msgId++,
+        id: this._msgId++,
       },
       headers,
     });
   }
 
-  private async validateAuth() {
+  private async _validateAuth() {
     let validAuth = await this.checkSession();
     if (!validAuth) {
       validAuth = await this.login();
     }
+
     if (!validAuth) {
       throw new Error('Invalid Auth');
     }

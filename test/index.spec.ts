@@ -5,7 +5,7 @@ import fs from 'fs';
 import { Deluge } from '../src/index';
 
 const baseURL = 'http://localhost:8112/';
-const torrentFile = path.join(__dirname + '/ubuntu-18.04.1-desktop-amd64.iso.torrent');
+const torrentFile = path.join(__dirname, '/ubuntu-18.04.1-desktop-amd64.iso.torrent');
 
 async function setupTorrent(deluge: Deluge) {
   await deluge.addTorrent(torrentFile);
@@ -188,6 +188,9 @@ describe('Deluge', () => {
     const keys = Object.keys(res.result.torrents);
     for (const key of keys) {
       await deluge.pauseTorrent(key);
+    }
+
+    for (const key of keys) {
       await deluge.resumeTorrent(key);
     }
   });
