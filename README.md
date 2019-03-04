@@ -16,7 +16,7 @@ npm install @ctrl/deluge
 import { Deluge } from '@ctrl/deluge';
 
 const deluge = new Deluge({
-  baseURL: 'http://localhost:8112/',
+  baseUrl: 'http://localhost:8112/',
   password: 'deluge',
 });
 
