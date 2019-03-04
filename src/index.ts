@@ -1,10 +1,10 @@
-import { resolve } from 'url';
+import { resolve, URL } from 'url';
 import got, { Response } from 'got';
 import { Cookie } from 'tough-cookie';
 import FormData from 'form-data';
 import fs from 'fs';
+import { TorrentSettings } from '@ctrl/shared-torrent';
 import {
-  DelugeConfig,
   GetHostsResponse,
   GetHostStatusResponse,
   DefaultResponse,
@@ -24,20 +24,21 @@ import {
   Tracker,
 } from './types';
 
-const defaults: DelugeConfig = {
-  baseURL: 'http://localhost:8112/',
+const defaults: Partial<TorrentSettings> = {
+  host: 'localhost',
+  port: 8112,
   path: '/json',
   password: 'deluge',
 };
 
 export class Deluge {
-  config: DelugeConfig;
+  config: Partial<TorrentSettings>;
 
   private _msgId = 0;
 
   private _cookie?: Cookie;
 
-  constructor(options: Partial<DelugeConfig> = {}) {
+  constructor(options: Partial<TorrentSettings> = {}) {
     this.config = { ...defaults, ...options };
   }
 
@@ -192,7 +193,12 @@ export class Deluge {
       form.append('file', torrent);
     }
 
-    const url = resolve(this.config.baseURL, 'upload');
+    const baseUrl = new URL(this.config.host as string);
+    if (this.config.port) {
+      baseUrl.port = `${this.config.port}`;
+    }
+
+    const url = resolve(baseUrl.toString(), '../upload');
     const res = await got.post(url, {
       headers: form.getHeaders(),
       body: form,
@@ -448,10 +454,15 @@ export class Deluge {
       }
     }
 
+    const baseUrl = new URL(this.config.host as string);
+    if (this.config.port) {
+      baseUrl.port = `${this.config.port}`;
+    }
+
     const headers: any = {
       Cookie: this._cookie && this._cookie.cookieString(),
     };
-    const url = resolve(this.config.baseURL, this.config.path);
+    const url = resolve(baseUrl.toString(), this.config.path as string);
     return got.post(url, {
       json: true,
       body: {

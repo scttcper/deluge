@@ -25,6 +25,7 @@
     "semantic-release": "cd dist && semantic-release"
   },
   "dependencies": {
+    "@ctrl/shared-torrent": "^1.0.1",
     "form-data": "2.3.3",
     "got": "9.6.0",
     "tough-cookie": "3.0.1"

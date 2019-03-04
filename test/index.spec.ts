@@ -4,7 +4,8 @@ import fs from 'fs';
 
 import { Deluge } from '../src/index';
 
-const baseURL = 'http://localhost:8112/';
+const host = 'http://localhost:8112/';
+const port = 8112;
 const torrentFile = path.join(__dirname, '/ubuntu-18.04.1-desktop-amd64.iso.torrent');
 
 async function setupTorrent(deluge: Deluge) {
@@ -23,7 +24,7 @@ async function setupTorrent(deluge: Deluge) {
 
 describe('Deluge', () => {
   afterEach(async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const torrents = await deluge.listTorrents();
     const ids = Object.keys(torrents.result.torrents);
     for (const id of ids) {
@@ -32,23 +33,23 @@ describe('Deluge', () => {
     }
   });
   it('should be instantiable', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     expect(deluge).toBeTruthy();
   });
   it('should disconnect', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     await deluge.connect();
     const res = await deluge.disconnect();
     expect(res).toBe(true);
   });
   it('should connect', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const res = await deluge.connect();
     // tslint:disable-next-line:no-null-keyword
     expect(res.result).toBe(null);
   });
   it('should get plugins', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const res = await deluge.getPlugins();
     expect(res.result.enabled_plugins).toEqual([]);
     expect(res.result.available_plugins).toBeDefined();
@@ -64,7 +65,7 @@ describe('Deluge', () => {
     ]);
   });
   it('should get plugins info', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const res = await deluge.getPluginInfo(['Label']);
     expect(res.result.License).toEqual('GPLv3');
   });
@@ -77,12 +78,12 @@ describe('Deluge', () => {
   //   await deluge.disablePlugin(['Label']);
   // });
   it('should get config', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const res = await deluge.getConfig();
     expect(res.result.dht).toBeDefined();
   });
   it('should set config', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const startConfig = await deluge.getConfig();
     expect(startConfig.result.upnp).toBe(true);
     await deluge.setConfig({ upnp: false });
@@ -91,18 +92,18 @@ describe('Deluge', () => {
     await deluge.setConfig({ upnp: true });
   });
   it('should login', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const success = await deluge.login();
     expect(success).toBe(true);
   });
   it('should logout', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     await deluge.login();
     const success = await deluge.logout();
     expect(success).toBe(true);
   });
   it('should change password', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const oldPassword = 'deluge';
     const newPassword = 'deluge1';
     // change password
@@ -119,35 +120,35 @@ describe('Deluge', () => {
     expect(deluge.changePassword('shouldfail')).rejects.toThrowError();
   });
   it('should list methods', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const methods = await deluge.listMethods();
     expect(Array.isArray(methods.result)).toEqual(true);
     expect(methods.result.length).toBeGreaterThanOrEqual(88);
   });
   it('should upload torrent from full path', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const res = await deluge.upload(torrentFile);
     expect(res.files.length).toBe(1);
     expect(res.success).toBe(true);
   });
   it('should add torrent from file path string', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const res = await deluge.addTorrent(torrentFile);
     expect(res.result).toBe(true);
   });
   it('should add torrent from file buffer', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const res = await deluge.addTorrent(fs.readFileSync(torrentFile));
     expect(res.result).toBe(true);
   });
   it('should add torrent from file contents base64', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const contents = Buffer.from(fs.readFileSync(torrentFile)).toString('base64');
     const res = await deluge.addTorrent(contents);
     expect(res.result).toBe(true);
   });
   it('should get torrent status', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const res = await setupTorrent(deluge);
     const keys = Object.keys(res.result.torrents);
     for (const key of keys) {
@@ -156,7 +157,7 @@ describe('Deluge', () => {
     }
   });
   it('should list torrents', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     await setupTorrent(deluge);
     const res = await deluge.listTorrents();
     expect(res.result.torrents).toBeDefined();
@@ -168,7 +169,7 @@ describe('Deluge', () => {
     }
   });
   it('should move torrents in queue', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const res = await setupTorrent(deluge);
     const key = Object.keys(res.result.torrents)[0];
     await deluge.queueUp(key);
@@ -177,13 +178,13 @@ describe('Deluge', () => {
     await deluge.queueBottom(key);
   });
   it('should force recheck torrent', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const res = await setupTorrent(deluge);
     const key = Object.keys(res.result.torrents)[0];
     await deluge.verifyTorrent(key);
   });
   it('should pause/resume torrents', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const res = await setupTorrent(deluge);
     const keys = Object.keys(res.result.torrents);
     for (const key of keys) {
@@ -195,7 +196,7 @@ describe('Deluge', () => {
     }
   });
   it('should set torrent options', async () => {
-    const deluge = new Deluge({ baseURL });
+    const deluge = new Deluge({ host, port });
     const res = await setupTorrent(deluge);
     const keys = Object.keys(res.result.torrents);
     for (const key of keys) {
