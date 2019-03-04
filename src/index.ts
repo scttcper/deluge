@@ -1,5 +1,5 @@
-import { resolve, URL } from 'url';
-import got, { Response } from 'got';
+import { resolve } from 'url';
+import got, { Response, GotJSONOptions } from 'got';
 import { Cookie } from 'tough-cookie';
 import FormData from 'form-data';
 import fs from 'fs';
@@ -24,15 +24,15 @@ import {
   Tracker,
 } from './types';
 
-const defaults: Partial<TorrentSettings> = {
-  host: 'localhost',
-  port: 8112,
+const defaults: TorrentSettings = {
+  baseUrl: 'http://localhost:8112/',
   path: '/json',
   password: 'deluge',
+  timeout: 5000,
 };
 
 export class Deluge {
-  config: Partial<TorrentSettings>;
+  config: TorrentSettings;
 
   private _msgId = 0;
 
@@ -193,12 +193,7 @@ export class Deluge {
       form.append('file', torrent);
     }
 
-    const baseUrl = new URL(this.config.host as string);
-    if (this.config.port) {
-      baseUrl.port = `${this.config.port}`;
-    }
-
-    const url = resolve(baseUrl.toString(), '../upload');
+    const url = resolve(this.config.baseUrl, '../upload');
     const res = await got.post(url, {
       headers: form.getHeaders(),
       body: form,
@@ -454,24 +449,31 @@ export class Deluge {
       }
     }
 
-    const baseUrl = new URL(this.config.host as string);
-    if (this.config.port) {
-      baseUrl.port = `${this.config.port}`;
-    }
-
     const headers: any = {
       Cookie: this._cookie && this._cookie.cookieString(),
     };
-    const url = resolve(baseUrl.toString(), this.config.path as string);
-    return got.post(url, {
-      json: true,
+    const url = resolve(this.config.baseUrl, this.config.path);
+    const options: GotJSONOptions = {
       body: {
         method,
         params,
         id: this._msgId++,
       },
       headers,
-    });
+      retry: 0,
+      json: true,
+    };
+
+    // allow proxy agent
+    if (this.config.agent) {
+      options.agent = this.config.agent;
+    }
+
+    if (this.config.timeout) {
+      options.timeout = this.config.timeout;
+    }
+
+    return got.post(url, options);
   }
 
   private async _validateAuth() {
