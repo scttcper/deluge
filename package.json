@@ -25,10 +25,11 @@
     "semantic-release": "cd dist && semantic-release"
   },
   "dependencies": {
-    "@ctrl/shared-torrent": "^1.0.3",
+    "@ctrl/shared-torrent": "^1.1.0",
     "form-data": "2.3.3",
     "got": "9.6.0",
-    "tough-cookie": "3.0.1"
+    "tough-cookie": "3.0.1",
+    "url-join": "^4.0.0"
   },
   "devDependencies": {
     "@types/form-data": "2.2.1",
@@ -37,9 +38,10 @@
     "@types/node": "11.10.4",
     "@types/p-wait-for": "2.0.0",
     "@types/tough-cookie": "2.3.5",
+    "@types/url-join": "4.0.0",
     "@typescript-eslint/eslint-plugin": "1.4.2",
     "@typescript-eslint/parser": "1.4.2",
-    "eslint": "5.15.0",
+    "eslint": "5.15.1",
     "eslint-config-prettier": "4.1.0",
     "eslint-config-xo-space": "0.21.0",
     "eslint-config-xo-typescript": "0.8.0",

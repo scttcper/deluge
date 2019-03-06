@@ -1,9 +1,15 @@
-import { resolve } from 'url';
+import urljoin from 'url-join';
 import got, { Response, GotJSONOptions } from 'got';
 import { Cookie } from 'tough-cookie';
 import FormData from 'form-data';
 import fs from 'fs';
-import { TorrentSettings } from '@ctrl/shared-torrent';
+import {
+  TorrentSettings,
+  TorrentClient,
+  NormalizedTorrent,
+  AllClientData,
+  TorrentState,
+} from '@ctrl/shared-torrent';
 import {
   GetHostsResponse,
   GetHostStatusResponse,
@@ -22,6 +28,7 @@ import {
   TorrentFiles,
   TorrentStatus,
   Tracker,
+  Torrent,
 } from './types';
 
 const defaults: TorrentSettings = {
@@ -31,7 +38,7 @@ const defaults: TorrentSettings = {
   timeout: 5000,
 };
 
-export class Deluge {
+export class Deluge implements TorrentClient {
   config: TorrentSettings;
 
   private _msgId = 0;
@@ -122,7 +129,7 @@ export class Deluge {
         if (check.body && check.body.result) {
           return true;
         }
-      // tslint:disable-next-line:no-unused
+        // tslint:disable-next-line:no-unused
       } catch {
         // do nothing
       }
@@ -193,7 +200,7 @@ export class Deluge {
       form.append('file', torrent);
     }
 
-    const url = resolve(this.config.baseUrl, '../upload');
+    const url = urljoin(this.config.baseUrl, '/upload');
     const res = await got.post(url, {
       headers: form.getHeaders(),
       body: form,
@@ -222,14 +229,8 @@ export class Deluge {
       // move_completed_path: '/root/Downloads',
       ...config,
     };
-    const res = await this.request<BooleanStatus>('web.add_torrents', [
-      [
-        {
-          path,
-          options,
-        },
-      ],
-    ]);
+    const res = await this.request<BooleanStatus>('web.add_torrents', [[{ path, options }]]);
+
     return res.body;
   }
 
@@ -258,7 +259,32 @@ export class Deluge {
     return res.body;
   }
 
-  async listTorrents(additionalFields: string[] = []) {
+  async getAllData(): Promise<AllClientData> {
+    const listTorrents = await this.listTorrents();
+    const results: AllClientData = {
+      torrents: [],
+      labels: [],
+    };
+    for (const id of Object.keys(listTorrents.result.torrents)) {
+      const torrent = listTorrents.result.torrents[id];
+      const torrentData: NormalizedTorrent = this._normalizeTorrentData(id, torrent);
+      results.torrents.push(torrentData);
+    }
+
+    if (listTorrents.result.filters.label) {
+      for (const label of listTorrents.result.filters.label) {
+        results.labels.push({
+          id: label[0],
+          name: label[0],
+          count: label[1],
+        });
+      }
+    }
+
+    return results;
+  }
+
+  async listTorrents(additionalFields: string[] = [], filter: { [key: string]: string } = {}) {
     const fields = [
       'distributed_copies',
       'download_payload_rate',
@@ -283,13 +309,20 @@ export class Deluge {
       'total_wanted',
       'tracker_host',
       'upload_payload_rate',
+      // if they don't have the label plugin it shouldn't fail
+      'label',
       ...additionalFields,
     ];
     const req = await this.request<TorrentListResponse>('web.update_ui', [
       [...new Set(fields)],
-      {},
+      filter,
     ]);
     return req.body;
+  }
+
+  async getTorrent(id: string) {
+    const torrentResponse = await this.getTorrentStatus(id);
+    return this._normalizeTorrentData(id, torrentResponse.result);
   }
 
   /**
@@ -333,6 +366,7 @@ export class Deluge {
       'max_download_speed',
       'max_upload_speed',
       'seeds_peers_ratio',
+      'label',
       ...additionalFields,
     ];
     const req = await this.request<TorrentStatus>('web.get_torrent_status', [torrentId, fields]);
@@ -452,7 +486,7 @@ export class Deluge {
     const headers: any = {
       Cookie: this._cookie && this._cookie.cookieString(),
     };
-    const url = resolve(this.config.baseUrl, this.config.path);
+    const url = urljoin(this.config.baseUrl, this.config.path);
     const options: GotJSONOptions = {
       body: {
         method,
@@ -474,6 +508,44 @@ export class Deluge {
     }
 
     return got.post(url, options);
+  }
+
+  private _normalizeTorrentData(id: string, torrent: Torrent): NormalizedTorrent {
+    const dateAdded = new Date(torrent.time_added * 1000).toISOString();
+
+    // normalize state to enum
+    let state = TorrentState.unknown;
+    if (Object.keys(TorrentState).includes(torrent.state.toLowerCase())) {
+      state = TorrentState[torrent.state.toLowerCase() as keyof typeof TorrentState];
+    }
+
+    const isCompleted = torrent.progress >= 100;
+
+    const result: NormalizedTorrent = {
+      id,
+      name: torrent.name,
+      state,
+      isCompleted,
+      stateMessage: torrent.state,
+      progress: torrent.progress,
+      ratio: torrent.ratio,
+      dateAdded,
+      dateCompleted: undefined,
+      label: torrent.label,
+      savePath: torrent.save_path,
+      uploadSpeed: torrent.upload_payload_rate,
+      downloadSpeed: torrent.download_payload_rate,
+      eta: torrent.eta,
+      queuePosition: torrent.queue + 1,
+      connectedPeers: torrent.num_peers,
+      connectedSeeds: torrent.num_seeds,
+      totalPeers: torrent.total_peers,
+      totalSeeds: torrent.total_seeds,
+      totalSelected: torrent.total_wanted,
+      totalUploaded: torrent.total_uploaded,
+      totalDownloaded: torrent.total_done,
+    };
+    return result;
   }
 
   private async _validateAuth() {

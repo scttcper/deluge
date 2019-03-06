@@ -1,4 +1,7 @@
 export interface DefaultResponse {
+  /**
+   * mostly usless id that increments with every request
+   */
   id: number;
   error: null | string;
   result: any;
@@ -13,7 +16,13 @@ export interface ListMethods extends DefaultResponse {
 }
 
 // {"files": ["/tmp/delugeweb-5Q9ttR/tmpL7xhth.torrent"], "success": true}
+/**
+ * ex -
+ */
 export interface UploadResponse {
+  /**
+   * ex - `["/tmp/delugeweb-5Q9ttR/tmpL7xhth.torrent"]`
+   */
   files: string[];
   success: boolean;
 }
@@ -94,6 +103,9 @@ export interface TorrentList {
   filters: TorrentFilters;
 }
 
+/**
+ * ['label', 'id']
+ */
 export interface TorrentFilters {
   state: [string, number][];
   tracker_host: [string, number][];
@@ -173,30 +185,7 @@ export interface Tracker {
 }
 
 export interface TorrentStatus extends DefaultResponse {
-  result: {
-    max_download_speed?: number;
-    stop_ratio?: number;
-    is_auto_managed?: true;
-    move_completed_path?: string;
-    private?: boolean;
-    stop_at_ratio?: boolean;
-    max_upload_speed?: number;
-    remove_at_ratio?: boolean;
-    max_upload_slots?: number;
-    prioritize_first_last?: boolean;
-    move_completed?: boolean;
-    max_connections?: number;
-    comment?: string;
-    name?: string;
-    total_size?: number;
-    num_files?: number;
-    tracker?: string;
-    save_path?: string;
-    message?: string;
-    peers?: TorrentPeers;
-    trackers?: Tracker;
-    [key: string]: any;
-  };
+  result: Torrent;
 }
 
 export interface TorrentPeers {
