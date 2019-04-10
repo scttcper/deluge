@@ -137,9 +137,13 @@ export interface Torrent {
   max_upload_speed: number;
   eta: number;
   save_path: string;
+  comment: string;
+  num_files: number;
+  total_size: number;
   progress: number;
   time_added: number;
   tracker_host: string;
+  tracker: string;
   total_uploaded: number;
   total_done: number;
   total_wanted: number;

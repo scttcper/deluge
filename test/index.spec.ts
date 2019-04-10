@@ -97,7 +97,7 @@ describe('Deluge', () => {
   });
   it('should logout', async () => {
     const deluge = new Deluge({ baseUrl });
-    await deluge.logout();
+    await deluge.login();
     const success = await deluge.logout();
     expect(success).toBe(true);
   });
