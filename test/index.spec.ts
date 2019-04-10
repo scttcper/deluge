@@ -5,6 +5,7 @@ import fs from 'fs';
 import { Deluge } from '../src/index';
 
 const baseUrl = 'http://localhost:8112';
+const torrentName = 'ubuntu-18.04.1-desktop-amd64.iso';
 const torrentFile = path.join(__dirname, '/ubuntu-18.04.1-desktop-amd64.iso.torrent');
 
 async function setupTorrent(deluge: Deluge) {
@@ -44,7 +45,6 @@ describe('Deluge', () => {
   it('should connect', async () => {
     const deluge = new Deluge({ baseUrl });
     const res = await deluge.connect();
-    // tslint:disable-next-line:no-null-keyword
     expect(res.result).toBe(null);
   });
   it('should get plugins', async () => {
@@ -97,7 +97,7 @@ describe('Deluge', () => {
   });
   it('should logout', async () => {
     const deluge = new Deluge({ baseUrl });
-    await deluge.login();
+    await deluge.logout();
     const success = await deluge.logout();
     expect(success).toBe(true);
   });
@@ -152,7 +152,7 @@ describe('Deluge', () => {
     const keys = Object.keys(res.result.torrents);
     for (const key of keys) {
       const status = await deluge.getTorrentStatus(key);
-      expect(status.result.name).toEqual('ubuntu-18.04.1-desktop-amd64.iso');
+      expect(status.result.name).toEqual(torrentName);
     }
   });
   it('should list torrents', async () => {
@@ -165,6 +165,25 @@ describe('Deluge', () => {
     for (const key of keys) {
       const torrent = res.result.torrents[key];
       expect(torrent.is_auto_managed).toBe(true);
+    }
+  });
+  it('should get array of normalized torrent data', async () => {
+    const deluge = new Deluge({ baseUrl });
+    await setupTorrent(deluge);
+    const res = await deluge.getAllData();
+    expect(res.torrents).toHaveLength(1);
+    for (const torrent of res.torrents) {
+      expect(torrent.id).toBeDefined();
+      expect(torrent.name).toBe(torrentName);
+    }
+  });
+  it('should get normalized torrent data', async () => {
+    const deluge = new Deluge({ baseUrl });
+    const res = await setupTorrent(deluge);
+    const keys = Object.keys(res.result.torrents);
+    for (const key of keys) {
+      const torrent = await deluge.getTorrent(key);
+      expect(torrent.name).toEqual(torrentName);
     }
   });
   it('should move torrents in queue', async () => {
