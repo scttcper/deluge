@@ -222,4 +222,30 @@ describe('Deluge', () => {
       await deluge.setTorrentOptions(key, { max_download_speed: 0 });
     }
   });
+  it('should return normalized torrent data', async () => {
+    const client = new Deluge({ baseUrl });
+    await setupTorrent(client);
+    const res = await client.getAllData();
+    const torrent = res.torrents[0];
+    expect(torrent.connectedPeers).toBe(0);
+    expect(torrent.connectedSeeds).toBe(0);
+    expect(torrent.downloadSpeed).toBe(0);
+    expect(torrent.eta).toBe(0);
+    expect(torrent.isCompleted).toBe(false);
+    expect(torrent.label).toBe(undefined);
+    expect(torrent.name).toBe(torrentName);
+    expect(torrent.progress).toBe(0);
+    expect(torrent.queuePosition).toBe(1);
+    expect(torrent.ratio).toBe(-1);
+    expect(torrent.savePath).toBe('/downloads');
+    expect(torrent.state).toBe('paused');
+    expect(torrent.stateMessage).toBe('');
+    expect(torrent.totalDownloaded).toBe(0);
+    expect(torrent.totalPeers).toBe(0);
+    expect(torrent.totalSeeds).toBe(0);
+    expect(torrent.totalSelected).toBe(1953349632);
+    expect(torrent.totalSize).toBe(1953349632);
+    expect(torrent.totalUploaded).toBe(0);
+    expect(torrent.uploadSpeed).toBe(0);
+  });
 });
