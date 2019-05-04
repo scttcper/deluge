@@ -234,6 +234,26 @@ export class Deluge implements TorrentClient {
     return res.body;
   }
 
+  async addTorrentMagnet(magnet: string, config: Partial<AddTorrentOptions> = {}) {
+    const options: AddTorrentOptions = {
+      file_priorities: [],
+      add_paused: false,
+      compact_allocation: false,
+      max_connections: -1,
+      max_download_speed: -1,
+      max_upload_slots: -1,
+      max_upload_speed: -1,
+      prioritize_first_last_pieces: false,
+      // not passing path by default uses default
+      // download_location: '/root/Downloads',
+      // move_completed_path: '/root/Downloads',
+      ...config,
+    };
+    const res = await this.request<BooleanStatus>('core.add_torrent_magnet', [magnet, options]);
+
+    return res.body;
+  }
+
   /**
    *
    * @param torrentId torrent id from list torrents
