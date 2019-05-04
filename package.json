@@ -9,13 +9,16 @@
     "deluge",
     "typescript"
   ],
-  "main": "./index.js",
+  "main": "./dist/index.js",
   "typings": "./index.d.ts",
+  "files": [
+    "dist"
+  ],
   "sideEffects": false,
   "scripts": {
     "lint": "eslint src/**/*.ts test/**/*.ts",
     "lint:fix": "eslint --fix src/**/*.ts test/**/*.ts",
-    "prebuild": "rimraf dist",
+    "prepare": "npm run build",
     "build": "tsc -p tsconfig.json",
     "postbuild": "cp package.json dist && cp LICENSE dist && cp README.md dist",
     "build:docs": "typedoc --out docs --target es6 --theme minimal --mode file src && touch docs/.nojekyll",
