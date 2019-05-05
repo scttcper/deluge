@@ -9,15 +9,17 @@
     "deluge",
     "typescript"
   ],
-  "main": "./index.js",
-  "typings": "./index.d.ts",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "sideEffects": false,
   "scripts": {
     "lint": "eslint src/**/*.ts test/**/*.ts",
     "lint:fix": "eslint --fix src/**/*.ts test/**/*.ts",
-    "prebuild": "rimraf dist",
-    "build": "tsc -p tsconfig.json",
-    "postbuild": "cp package.json dist && cp LICENSE dist && cp README.md dist",
+    "prepare": "npm run build",
+    "build": "del dist && tsc",
     "build:docs": "typedoc --out docs --target es6 --theme minimal --mode file src && touch docs/.nojekyll",
     "test": "jest --runInBand",
     "test:watch": "jest --watch --runInBand",
@@ -40,6 +42,7 @@
     "@types/url-join": "4.0.0",
     "@typescript-eslint/eslint-plugin": "1.7.0",
     "@typescript-eslint/parser": "1.7.0",
+    "del-cli": "1.1.0",
     "eslint": "5.16.0",
     "eslint-config-prettier": "4.2.0",
     "eslint-config-xo-space": "0.21.0",
@@ -48,7 +51,6 @@
     "jest": "24.8.0",
     "p-wait-for": "3.1.0",
     "prettier": "1.17.0",
-    "rimraf": "2.6.3",
     "semantic-release": "15.13.3",
     "ts-jest": "24.0.2",
     "typedoc": "0.14.2",
@@ -61,6 +63,6 @@
     "branch": "master"
   },
   "engines": {
-    "node": ">= 10"
+    "node": ">= 8"
   }
 }
