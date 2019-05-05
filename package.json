@@ -24,7 +24,7 @@
     "test": "jest --runInBand",
     "test:watch": "jest --watch --runInBand",
     "test:ci": "jest --runInBand --coverage --no-cache",
-    "semantic-release": "cd dist && semantic-release"
+    "semantic-release": "semantic-release"
   },
   "dependencies": {
     "@ctrl/shared-torrent": "^1.1.2",
