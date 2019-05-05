@@ -237,7 +237,7 @@ describe('Deluge', () => {
     expect(torrent.progress).toBe(0);
     expect(torrent.queuePosition).toBe(1);
     expect(torrent.ratio).toBe(-1);
-    expect(torrent.savePath).toBe('/downloads');
+    expect(torrent.savePath).toBe('/root/Downloads');
     expect(torrent.state).toBe('paused');
     expect(torrent.stateMessage).toBe('');
     expect(torrent.totalDownloaded).toBe(0);
