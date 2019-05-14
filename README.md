@@ -71,5 +71,5 @@ console.log(res);
 ```
 
 ### See Also
-transmission - https://github.com/TypeCtrl/transmission
+transmission - https://github.com/TypeCtrl/transmission  
 qbittorrent - https://github.com/TypeCtrl/qbittorrent  

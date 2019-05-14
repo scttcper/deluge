@@ -9,7 +9,10 @@ import {
   NormalizedTorrent,
   AllClientData,
   TorrentState,
+  AddTorrentOptions as NormalizedAddTorrentOptions,
 } from '@ctrl/shared-torrent';
+import parseTorrent from 'parse-torrent';
+
 import {
   GetHostsResponse,
   GetHostStatusResponse,
@@ -231,7 +234,30 @@ export class Deluge implements TorrentClient {
     };
     const res = await this.request<BooleanStatus>('web.add_torrents', [[{ path, options }]]);
 
+    if (res.body.result === false) {
+      throw new Error('Failed to add torrent');
+    }
+
     return res.body;
+  }
+
+  async normalizedAddTorrent(
+    torrent: string | Buffer,
+    options: Partial<NormalizedAddTorrentOptions> = {},
+  ): Promise<NormalizedTorrent> {
+    const torrentOptions: Partial<AddTorrentOptions> = {};
+    if (options.startPaused) {
+      torrentOptions.add_paused = true;
+    }
+
+    const hash = parseTorrent(torrent).infoHash;
+    await this.addTorrent(torrent, torrentOptions);
+
+    if (options.label) {
+      await this.setTorrentLabel(hash, options.label);
+    }
+
+    return this.getTorrent(hash);
   }
 
   async addTorrentMagnet(magnet: string, config: Partial<AddTorrentOptions> = {}) {
@@ -433,6 +459,21 @@ export class Deluge implements TorrentClient {
 
   async verifyTorrent(torrentId: string) {
     const req = await this.request<DefaultResponse>('core.force_recheck', [[torrentId]]);
+    return req.body;
+  }
+
+  async setTorrentLabel(torrentId: string, label: string) {
+    const req = await this.request<DefaultResponse>('label.set_torrent', [torrentId, label]);
+    return req.body;
+  }
+
+  async addLabel(label: string) {
+    const req = await this.request<DefaultResponse>('label.add', [label]);
+    return req.body;
+  }
+
+  async getLabels() {
+    const req = await this.request<ListMethods>('label.get_labels', []);
     return req.body;
   }
 
