@@ -26,7 +26,7 @@ async function main() {
 
 ### API
 
-Docs: https://typectrl.github.io/deluge/classes/deluge.html
+Docs: https://deluge.netlify.com/  
 
 ### Normalized API
 These functions have been normalized between torrent clients. Can easily support multiple torrent clients. See below for alternative supported torrent clients

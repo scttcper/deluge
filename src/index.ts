@@ -11,7 +11,7 @@ import {
   TorrentState,
   AddTorrentOptions as NormalizedAddTorrentOptions,
 } from '@ctrl/shared-torrent';
-import parseTorrent from 'parse-torrent';
+import { hash } from '@ctrl/torrent-file';
 
 import {
   GetHostsResponse,
@@ -250,14 +250,19 @@ export class Deluge implements TorrentClient {
       torrentOptions.add_paused = true;
     }
 
-    const hash = parseTorrent(torrent).infoHash;
+    if (!Buffer.isBuffer(torrent)) {
+      torrent = Buffer.from(torrent);
+    }
+
+    const torrentHash = await hash(torrent);
+
     await this.addTorrent(torrent, torrentOptions);
 
     if (options.label) {
-      await this.setTorrentLabel(hash, options.label);
+      await this.setTorrentLabel(torrentHash, options.label);
     }
 
-    return this.getTorrent(hash);
+    return this.getTorrent(torrentHash);
   }
 
   async addTorrentMagnet(magnet: string, config: Partial<AddTorrentOptions> = {}) {
