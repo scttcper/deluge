@@ -1,5 +1,5 @@
 import urljoin from 'url-join';
-import got, { Response, GotJSONOptions } from 'got';
+import got, { Response, GotJSONOptions, GotFormOptions, GotOptions, GotBodyOptions } from 'got';
 import { Cookie } from 'tough-cookie';
 import FormData from 'form-data';
 import fs from 'fs';
@@ -204,10 +204,21 @@ export class Deluge implements TorrentClient {
     }
 
     const url = urljoin(this.config.baseUrl, '/upload');
-    const res = await got.post(url, {
+    const options: GotBodyOptions<any> = {
       headers: form.getHeaders(),
       body: form,
-    });
+      retry: 0,
+    }
+    // allow proxy agent
+    if (this.config.agent) {
+      options.agent = this.config.agent;
+    }
+
+    if (this.config.timeout) {
+      options.timeout = this.config.timeout;
+    }
+
+    const res = await got.post(url, options);
     return JSON.parse(res.body);
   }
 
