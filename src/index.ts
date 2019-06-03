@@ -1,5 +1,5 @@
 import urljoin from 'url-join';
-import got, { Response, GotJSONOptions, GotFormOptions, GotOptions, GotBodyOptions } from 'got';
+import got, { Response, GotJSONOptions, GotBodyOptions } from 'got';
 import { Cookie } from 'tough-cookie';
 import FormData from 'form-data';
 import fs from 'fs';
