@@ -11,19 +11,8 @@ export interface BooleanStatus extends DefaultResponse {
   result: boolean;
 }
 
-export interface StringStatus extends DefaultResponse {
-  result: string;
-}
-
 export interface ListMethods extends DefaultResponse {
   result: string[];
-}
-
-export interface AddTorrentResponse extends DefaultResponse {
-  /**
-   * tuple of [result, torrent_hash_id]
-   */
-  result: Array<[boolean, string]>
 }
 
 // {"files": ["/tmp/delugeweb-5Q9ttR/tmpL7xhth.torrent"], "success": true}
@@ -100,12 +89,7 @@ export interface AddTorrentOptions {
   max_upload_slots: number;
   max_upload_speed: number;
   prioritize_first_last_pieces: boolean;
-  move_completed: boolean;
   move_completed_path?: string;
-  pre_allocate_storage: boolean;
-  sequential_download: boolean;
-  seed_mode: boolean;
-  super_seeding: boolean;
 }
 
 export interface TorrentListResponse extends DefaultResponse {

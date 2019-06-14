@@ -11,6 +11,7 @@ import {
   TorrentState,
   AddTorrentOptions as NormalizedAddTorrentOptions,
 } from '@ctrl/shared-torrent';
+import { hash } from '@ctrl/torrent-file';
 
 import {
   GetHostsResponse,
@@ -31,8 +32,6 @@ import {
   TorrentStatus,
   Tracker,
   Torrent,
-  StringStatus,
-  AddTorrentResponse,
 } from './types';
 
 const defaults: TorrentSettings = {
@@ -78,11 +77,11 @@ export class Deluge implements TorrentClient {
   }
 
   /**
-   * Connects deluge and returns a list of available methods
+   * Connects deluge
    * @param host index of host to use in result of get hosts
    * @param hostIdx index of host to use in result of get hosts
    */
-  async connect(selectedHost?: string, hostIdx = 0): Promise<ListMethods> {
+  async connect(selectedHost?: string, hostIdx = 0): Promise<DefaultResponse> {
     let host = selectedHost;
     if (!host) {
       const hosts = await this.getHosts();
@@ -93,7 +92,7 @@ export class Deluge implements TorrentClient {
       throw new Error('No hosts found');
     }
 
-    const res = await this.request<ListMethods>('web.connect', [host], true, false);
+    const res = await this.request<DefaultResponse>('web.connect', [host], true, false);
     return res.body;
   }
 
@@ -107,14 +106,8 @@ export class Deluge implements TorrentClient {
    * Other instances may also reconnect. Not really sure why you would want to disconnect
    */
   async disconnect(): Promise<boolean> {
-    const res = await this.request<StringStatus>('web.disconnect', [], true, false);
-    // deluge 1.x returns a boolean and 2.x returns a string
-    if (typeof res.body.result === 'boolean') {
-      return res.body.result;
-    }
-
-    // "Connection was closed cleanly."
-    return res.body.result.includes('closed cleanly');
+    const res = await this.request<BooleanStatus>('web.disconnect', [], true, false);
+    return res.body.result;
   }
 
   /**
@@ -215,7 +208,7 @@ export class Deluge implements TorrentClient {
       headers: form.getHeaders(),
       body: form,
       retry: 0,
-    };
+    }
     // allow proxy agent
     if (this.config.agent) {
       options.agent = this.config.agent;
@@ -229,10 +222,7 @@ export class Deluge implements TorrentClient {
     return JSON.parse(res.body);
   }
 
-  async addTorrent(
-    torrent: string | Buffer,
-    config: Partial<AddTorrentOptions> = {},
-  ): Promise<AddTorrentResponse> {
+  async addTorrent(torrent: string | Buffer, config: Partial<AddTorrentOptions> = {}) {
     const upload = await this.upload(torrent);
     if (!upload.success || !upload.files.length) {
       throw new Error('Failed to upload');
@@ -251,16 +241,11 @@ export class Deluge implements TorrentClient {
       // not passing path by default uses default
       // download_location: '/root/Downloads',
       // move_completed_path: '/root/Downloads',
-      pre_allocate_storage: false,
-      move_completed: false,
-      seed_mode: false,
-      sequential_download: false,
-      super_seeding: false,
       ...config,
     };
-    const res = await this.request<AddTorrentResponse>('web.add_torrents', [[{ path, options }]]);
+    const res = await this.request<BooleanStatus>('web.add_torrents', [[{ path, options }]]);
 
-    if (res.body.result[0][0] === false) {
+    if (res.body.result === false) {
       throw new Error('Failed to add torrent');
     }
 
@@ -280,12 +265,11 @@ export class Deluge implements TorrentClient {
       torrent = Buffer.from(torrent);
     }
 
-    const res = await this.addTorrent(torrent, torrentOptions);
-    const torrentHash = res.result[0][1];
+    const torrentHash = await hash(torrent);
+
+    await this.addTorrent(torrent, torrentOptions);
 
     if (options.label) {
-      // sets the label but it might not set the label right away
-      // sometimes takes a few seconds for label to reflect in results
       await this.setTorrentLabel(torrentHash, options.label);
     }
 
@@ -304,12 +288,7 @@ export class Deluge implements TorrentClient {
       prioritize_first_last_pieces: false,
       // not passing path by default uses default
       // download_location: '/root/Downloads',
-      move_completed: false,
       // move_completed_path: '/root/Downloads',
-      pre_allocate_storage: false,
-      seed_mode: false,
-      sequential_download: false,
-      super_seeding: false,
       ...config,
     };
     const res = await this.request<BooleanStatus>('core.add_torrent_magnet', [magnet, options]);
@@ -412,10 +391,7 @@ export class Deluge implements TorrentClient {
    * get torrent state/status
    * @param additionalFields fields ex - `['label']`
    */
-  async getTorrentStatus(
-    torrentId: string,
-    additionalFields: string[] = [],
-  ): Promise<TorrentStatus> {
+  async getTorrentStatus(torrentId: string, additionalFields: string[] = []): Promise<TorrentStatus> {
     const fields = [
       'total_done',
       'total_payload_download',
