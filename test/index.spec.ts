@@ -36,7 +36,7 @@ describe('Deluge', () => {
       await deluge.removeTorrent(id, false);
     }
   });
-  it('should be instantiable', async () => {
+  it.only('should be instantiable', async () => {
     const deluge = new Deluge({ baseUrl });
     expect(deluge).toBeTruthy();
   });
