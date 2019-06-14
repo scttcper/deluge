@@ -226,6 +226,10 @@ describe('Deluge', () => {
       await deluge.setTorrentOptions(key, { max_download_speed: 0 });
     }
   });
+  it('should error when torrent hash does not exist', async () => {
+    const client = new Deluge({ baseUrl });
+    await expect(client.getTorrentStatus('abc123hash')).rejects.toThrowError();
+  });
   it('should return normalized torrent data', async () => {
     const client = new Deluge({ baseUrl });
     await setupTorrent(client);
