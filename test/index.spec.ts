@@ -18,7 +18,7 @@ async function setupTorrent(deluge: Deluge) {
     { timeout: 10000 },
   );
   const res = await deluge.listTorrents();
-  expect(Object.keys(res.result.torrents).length).toEqual(1);
+  expect(Object.keys(res.result.torrents)).toHaveLength(1);
   return res;
 }
 

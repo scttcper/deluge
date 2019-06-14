@@ -391,7 +391,7 @@ export class Deluge implements TorrentClient {
    * get torrent state/status
    * @param additionalFields fields ex - `['label']`
    */
-  async getTorrentStatus(torrentId: string, additionalFields: string[] = []) {
+  async getTorrentStatus(torrentId: string, additionalFields: string[] = []): Promise<TorrentStatus> {
     const fields = [
       'total_done',
       'total_payload_download',
@@ -436,6 +436,10 @@ export class Deluge implements TorrentClient {
       ...additionalFields,
     ];
     const req = await this.request<TorrentStatus>('web.get_torrent_status', [torrentId, fields]);
+    if (!req.body.result || !Object.keys(req.body.result).length) {
+      throw new Error('Torrent not found');
+    }
+
     return req.body;
   }
 
