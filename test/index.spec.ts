@@ -63,7 +63,13 @@ describe('Deluge', () => {
   it('should get plugins info', async () => {
     const deluge = new Deluge({ baseUrl });
     const res = await deluge.getPluginInfo(['Label']);
-    expect(res.result.License).toEqual('GPLv3');
+    expect(res.result.License).toBe('GPLv3');
+  });
+  it('should get version', async () => {
+    const deluge = new Deluge({ baseUrl });
+    const res = await deluge.getVersion();
+    console.log({ version: res.result });
+    expect(res.result.startsWith('2.0')).toBe(true);
   });
   // for some reason explodes deluge
   // it('should enable/disable plugins', async () => {
