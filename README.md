@@ -73,3 +73,5 @@ console.log(res);
 ### See Also
 transmission - https://github.com/TypeCtrl/transmission  
 qbittorrent - https://github.com/TypeCtrl/qbittorrent  
+utorrent - https://github.com/TypeCtrl/utorrent  
+rtorrent - https://github.com/TypeCtrl/rtorrent  

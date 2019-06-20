@@ -175,6 +175,14 @@ export class Deluge implements TorrentClient {
   }
 
   /**
+   * returns the version ex - `2.0.3-2-201906121747-ubuntu18.04.1`
+   */
+  async getVersion() {
+    const req = await this.request<StringStatus>('daemon.get_version');
+    return req.body;
+  }
+
+  /**
    * used to get torrent info before adding
    * @param tmpPath use path returned from upload torrent looks like `'/tmp/delugeweb-DfEsgR/tmpD3rujY.torrent'`
    */
@@ -185,10 +193,11 @@ export class Deluge implements TorrentClient {
 
   /**
    * Lists methods
+   * @param auth disable or enable auth connection
    * @returns a list of method names
    */
-  async listMethods() {
-    const req = await this.request<ListMethods>('system.listMethods', undefined, false);
+  async listMethods(auth = true) {
+    const req = await this.request<ListMethods>('system.listMethods', undefined, auth);
     return req.body;
   }
 
