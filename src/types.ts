@@ -23,7 +23,7 @@ export interface AddTorrentResponse extends DefaultResponse {
   /**
    * tuple of [result, torrent_hash_id]
    */
-  result: Array<[boolean, string]>
+  result: Array<[boolean, string]>;
 }
 
 // {"files": ["/tmp/delugeweb-5Q9ttR/tmpL7xhth.torrent"], "success": true}
