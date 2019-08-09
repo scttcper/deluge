@@ -22,8 +22,8 @@
     "build": "del dist && tsc",
     "build:docs": "typedoc --out docs --target es6 --theme minimal --mode file src && touch docs/.nojekyll",
     "test": "jest --runInBand",
-    "test:watch": "jest --watch --runInBand --reporters=default --reporters=jest-junit",
-    "test:ci": "jest --runInBand --coverage --no-cache",
+    "test:watch": "jest --watch --runInBand",
+    "test:ci": "jest --runInBand --coverage --no-cache --reporters=default --reporters=jest-junit",
     "semantic-release": "semantic-release"
   },
   "dependencies": {
