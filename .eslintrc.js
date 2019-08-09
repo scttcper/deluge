@@ -16,5 +16,6 @@ module.exports = {
     '@typescript-eslint/camelcase': 0,
     '@typescript-eslint/promise-function-async': 0,
     '@typescript-eslint/unified-signatures': 0,
+    '@typescript-eslint/no-explicit-any': 0,
   },
 };

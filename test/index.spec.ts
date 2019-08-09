@@ -26,7 +26,7 @@ async function setupTorrent(deluge: Deluge) {
 describe('Deluge', () => {
   beforeAll(async () => {
     const deluge = new Deluge({ baseUrl });
-    deluge.enablePlugin(['Label']);
+    await deluge.enablePlugin(['Label']);
   });
   afterEach(async () => {
     const deluge = new Deluge({ baseUrl });
@@ -37,7 +37,7 @@ describe('Deluge', () => {
       await deluge.removeTorrent(id, true);
     }
   });
-  it('should be instantiable', async () => {
+  it('should be instantiable', () => {
     const deluge = new Deluge({ baseUrl });
     expect(deluge).toBeTruthy();
   });
