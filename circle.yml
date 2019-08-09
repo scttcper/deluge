@@ -25,7 +25,7 @@ jobs:
           name: codecov
           command: bash <(curl -s https://codecov.io/bash)
       - store_test_results:
-          path: jest
+          path: junit.xml
   release:
     docker:
       - image: circleci/node:10
