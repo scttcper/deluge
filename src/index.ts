@@ -1,38 +1,39 @@
-import urljoin from 'url-join';
-import got, { Response, GotJSONOptions, GotBodyOptions } from 'got';
-import { Cookie } from 'tough-cookie';
 import FormData from 'form-data';
 import fs from 'fs';
+import got, { Response } from 'got';
+import { Cookie } from 'tough-cookie';
+import urljoin from 'url-join';
+
 import {
-  TorrentSettings,
-  TorrentClient,
-  NormalizedTorrent,
-  AllClientData,
-  TorrentState,
   AddTorrentOptions as NormalizedAddTorrentOptions,
+  AllClientData,
+  NormalizedTorrent,
+  TorrentClient,
+  TorrentSettings,
+  TorrentState,
 } from '@ctrl/shared-torrent';
 
 import {
+  AddTorrentOptions,
+  AddTorrentResponse,
+  BooleanStatus,
+  ConfigResponse,
+  DefaultResponse,
+  DelugeSettings,
   GetHostsResponse,
   GetHostStatusResponse,
-  DefaultResponse,
-  BooleanStatus,
-  TorrentInfo,
   ListMethods,
-  UploadResponse,
-  AddTorrentOptions,
-  TorrentListResponse,
-  DelugeSettings,
   PluginInfo,
-  ConfigResponse,
   PluginsListResponse,
-  TorrentOptions,
+  StringStatus,
+  Torrent,
   TorrentFiles,
+  TorrentInfo,
+  TorrentListResponse,
+  TorrentOptions,
   TorrentStatus,
   Tracker,
-  Torrent,
-  StringStatus,
-  AddTorrentResponse,
+  UploadResponse,
 } from './types';
 
 const defaults: TorrentSettings = {
@@ -53,12 +54,12 @@ export class Deluge implements TorrentClient {
     this.config = { ...defaults, ...options };
   }
 
-  resetSession() {
+  resetSession(): void {
     this._cookie = undefined;
     this._msgId = 0;
   }
 
-  async getHosts() {
+  async getHosts(): Promise<GetHostsResponse> {
     const res = await this.request<GetHostsResponse>('web.get_hosts', [], true, false);
     return res.body;
   }
@@ -67,7 +68,7 @@ export class Deluge implements TorrentClient {
    * Gets host status
    * @param host pass host id from `this.getHosts()`
    */
-  async getHostStatus(host: string) {
+  async getHostStatus(host: string): Promise<GetHostStatusResponse> {
     const res = await this.request<GetHostStatusResponse>(
       'web.get_host_status',
       [host],
@@ -121,7 +122,7 @@ export class Deluge implements TorrentClient {
    * Checks current session is valid
    * @returns true if valid
    */
-  async checkSession() {
+  async checkSession(): Promise<boolean> {
     // cookie is missing or expires in x seconds
     if (this._cookie) {
       // eslint-disable-next-line new-cap
@@ -177,7 +178,7 @@ export class Deluge implements TorrentClient {
   /**
    * returns the version ex - `2.0.3-2-201906121747-ubuntu18.04.1`
    */
-  async getVersion() {
+  async getVersion(): Promise<StringStatus> {
     const req = await this.request<StringStatus>('daemon.get_version');
     return req.body;
   }
@@ -186,7 +187,7 @@ export class Deluge implements TorrentClient {
    * used to get torrent info before adding
    * @param tmpPath use path returned from upload torrent looks like `'/tmp/delugeweb-DfEsgR/tmpD3rujY.torrent'`
    */
-  async getTorrentInfo(tmpPath: string) {
+  async getTorrentInfo(tmpPath: string): Promise<TorrentInfo> {
     const res = await this.request<TorrentInfo>('web.get_torrent_info', [tmpPath]);
     return res.body;
   }
@@ -196,7 +197,7 @@ export class Deluge implements TorrentClient {
    * @param auth disable or enable auth connection
    * @returns a list of method names
    */
-  async listMethods(auth = true) {
+  async listMethods(auth = true): Promise<ListMethods> {
     const req = await this.request<ListMethods>('system.listMethods', undefined, auth);
     return req.body;
   }
@@ -220,21 +221,16 @@ export class Deluge implements TorrentClient {
     }
 
     const url = urljoin(this.config.baseUrl, '/upload');
-    const options: GotBodyOptions<any> = {
+    const res = await got.post(url, {
       headers: form.getHeaders(),
       body: form,
       retry: 0,
-    };
-    // allow proxy agent
-    if (this.config.agent) {
-      options.agent = this.config.agent;
-    }
+      // allow proxy agent
+      agent: this.config.agent,
+      timeout: this.config.timeout,
+    });
 
-    if (this.config.timeout) {
-      options.timeout = this.config.timeout;
-    }
-
-    const res = await got.post(url, options);
+    // repsonse is json but in a string, cannot use native got.json()
     return JSON.parse(res.body);
   }
 
@@ -301,7 +297,10 @@ export class Deluge implements TorrentClient {
     return this.getTorrent(torrentHash);
   }
 
-  async addTorrentMagnet(magnet: string, config: Partial<AddTorrentOptions> = {}) {
+  async addTorrentMagnet(
+    magnet: string,
+    config: Partial<AddTorrentOptions> = {},
+  ): Promise<BooleanStatus> {
     const options: AddTorrentOptions = {
       file_priorities: [],
       add_paused: false,
@@ -331,12 +330,12 @@ export class Deluge implements TorrentClient {
    * @param torrentId torrent id from list torrents
    * @param removeData true will delete all data from disk
    */
-  async removeTorrent(torrentId: string, removeData = true) {
+  async removeTorrent(torrentId: string, removeData = true): Promise<BooleanStatus> {
     const req = await this.request<BooleanStatus>('core.remove_torrent', [torrentId, removeData]);
     return req.body;
   }
 
-  async changePassword(password: string) {
+  async changePassword(password: string): Promise<BooleanStatus> {
     const res = await this.request<BooleanStatus>('auth.change_password', [
       this.config.password,
       password,
@@ -376,7 +375,10 @@ export class Deluge implements TorrentClient {
     return results;
   }
 
-  async listTorrents(additionalFields: string[] = [], filter: { [key: string]: string } = {}) {
+  async listTorrents(
+    additionalFields: string[] = [],
+    filter: { [key: string]: string } = {},
+  ): Promise<TorrentListResponse> {
     const fields = [
       'distributed_copies',
       'download_payload_rate',
@@ -412,7 +414,7 @@ export class Deluge implements TorrentClient {
     return req.body;
   }
 
-  async getTorrent(id: string) {
+  async getTorrent(id: string): Promise<NormalizedTorrent> {
     const torrentResponse = await this.getTorrentStatus(id);
     return this._normalizeTorrentData(id, torrentResponse.result);
   }
@@ -479,22 +481,25 @@ export class Deluge implements TorrentClient {
   /**
    * Get list of files for a torrent
    */
-  async getTorrentFiles(torrentId: string) {
+  async getTorrentFiles(torrentId: string): Promise<TorrentFiles> {
     const req = await this.request<TorrentFiles>('web.get_torrent_files', [torrentId]);
     return req.body;
   }
 
-  async pauseTorrent(torrentId: string) {
+  async pauseTorrent(torrentId: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.pause_torrent', [[torrentId]]);
     return req.body;
   }
 
-  async resumeTorrent(torrentId: string) {
+  async resumeTorrent(torrentId: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.resume_torrent', [[torrentId]]);
     return req.body;
   }
 
-  async setTorrentOptions(torrentId: string, options: Partial<TorrentOptions> = {}) {
+  async setTorrentOptions(
+    torrentId: string,
+    options: Partial<TorrentOptions> = {},
+  ): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.set_torrent_options', [
       [torrentId],
       options,
@@ -502,7 +507,7 @@ export class Deluge implements TorrentClient {
     return req.body;
   }
 
-  async setTorrentTrackers(torrentId: string, trackers: Tracker[] = []) {
+  async setTorrentTrackers(torrentId: string, trackers: Tracker[] = []): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.set_torrent_trackers', [
       [torrentId],
       trackers,
@@ -510,72 +515,72 @@ export class Deluge implements TorrentClient {
     return req.body;
   }
 
-  async verifyTorrent(torrentId: string) {
+  async verifyTorrent(torrentId: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.force_recheck', [[torrentId]]);
     return req.body;
   }
 
-  async setTorrentLabel(torrentId: string, label: string) {
+  async setTorrentLabel(torrentId: string, label: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('label.set_torrent', [torrentId, label]);
     return req.body;
   }
 
-  async addLabel(label: string) {
+  async addLabel(label: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('label.add', [label]);
     return req.body;
   }
 
-  async getLabels() {
+  async getLabels(): Promise<ListMethods> {
     const req = await this.request<ListMethods>('label.get_labels', []);
     return req.body;
   }
 
-  async queueTop(torrentId: string) {
+  async queueTop(torrentId: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.queue_top', [[torrentId]]);
     return req.body;
   }
 
-  async queueBottom(torrentId: string) {
+  async queueBottom(torrentId: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.queue_bottom', [[torrentId]]);
     return req.body;
   }
 
-  async queueUp(torrentId: string) {
+  async queueUp(torrentId: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.queue_up', [[torrentId]]);
     return req.body;
   }
 
-  async queueDown(torrentId: string) {
+  async queueDown(torrentId: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.queue_down', [[torrentId]]);
     return req.body;
   }
 
-  async getConfig() {
+  async getConfig(): Promise<ConfigResponse> {
     const req = await this.request<ConfigResponse>('core.get_config', []);
     return req.body;
   }
 
-  async setConfig(config: Partial<DelugeSettings>) {
+  async setConfig(config: Partial<DelugeSettings>): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.set_config', [config]);
     return req.body;
   }
 
-  async getPlugins() {
+  async getPlugins(): Promise<PluginsListResponse> {
     const req = await this.request<PluginsListResponse>('web.get_plugins', []);
     return req.body;
   }
 
-  async getPluginInfo(plugins: string[]) {
+  async getPluginInfo(plugins: string[]): Promise<PluginInfo> {
     const req = await this.request<PluginInfo>('web.get_plugin_info', plugins);
     return req.body;
   }
 
-  async enablePlugin(plugins: string[]) {
+  async enablePlugin(plugins: string[]): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.enable_plugin', plugins);
     return req.body;
   }
 
-  async disablePlugin(plugins: string[]) {
+  async disablePlugin(plugins: string[]): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.disable_plugin', plugins);
     return req.body;
   }
@@ -605,27 +610,19 @@ export class Deluge implements TorrentClient {
       Cookie: this._cookie && this._cookie.cookieString(),
     };
     const url = urljoin(this.config.baseUrl, this.config.path);
-    const options: GotJSONOptions = {
-      body: {
+    return got.post(url, {
+      json: {
         method,
         params,
         id: this._msgId++,
       },
       headers,
       retry: 0,
-      json: true,
-    };
-
-    // allow proxy agent
-    if (this.config.agent) {
-      options.agent = this.config.agent;
-    }
-
-    if (this.config.timeout) {
-      options.timeout = this.config.timeout;
-    }
-
-    return got.post(url, options);
+      // allow proxy agent
+      agent: this.config.agent,
+      timeout: this.config.timeout,
+      responseType: 'json',
+    });
   }
 
   private _normalizeTorrentData(id: string, torrent: Torrent): NormalizedTorrent {
@@ -667,7 +664,7 @@ export class Deluge implements TorrentClient {
     return result;
   }
 
-  private async _validateAuth() {
+  private async _validateAuth(): Promise<void> {
     let validAuth = await this.checkSession();
     if (!validAuth) {
       validAuth = await this.login();

@@ -3,13 +3,14 @@ import pWaitFor from 'p-wait-for';
 import fs from 'fs';
 
 import { Deluge } from '../src/index';
+import { TorrentListResponse } from '../src/types';
 
 const baseUrl = 'http://localhost:8112';
 const torrentName = 'ubuntu-18.04.1-desktop-amd64.iso';
 const torrentFile = path.join(__dirname, '/ubuntu-18.04.1-desktop-amd64.iso.torrent');
 const torrentHash = 'e84213a794f3ccd890382a54a64ca68b7e925433';
 
-async function setupTorrent(deluge: Deluge) {
+async function setupTorrent(deluge: Deluge): Promise<TorrentListResponse> {
   await deluge.addTorrent(torrentFile, { add_paused: true });
   await pWaitFor(
     async () => {

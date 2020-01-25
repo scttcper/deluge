@@ -143,6 +143,7 @@ export interface Stats {
 }
 
 export interface Torrent {
+  [key: string]: any;
   max_download_speed: number;
   upload_payload_rate: number;
   download_payload_rate: number;
@@ -171,7 +172,6 @@ export interface Torrent {
   queue: number;
   distributed_copies: number;
   label?: string;
-  [key: string]: any;
 }
 
 export interface PluginInfo extends DefaultResponse {
