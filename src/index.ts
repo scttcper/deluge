@@ -15,7 +15,6 @@ import {
 
 import {
   AddTorrentOptions,
-  AddTorrentResponse,
   BooleanStatus,
   ConfigResponse,
   DefaultResponse,
@@ -237,7 +236,7 @@ export class Deluge implements TorrentClient {
   async addTorrent(
     torrent: string | Buffer,
     config: Partial<AddTorrentOptions> = {},
-  ): Promise<AddTorrentResponse> {
+  ): Promise<BooleanStatus> {
     const upload = await this.upload(torrent);
     if (!upload.success || !upload.files.length) {
       throw new Error('Failed to upload');
@@ -263,9 +262,9 @@ export class Deluge implements TorrentClient {
       super_seeding: false,
       ...config,
     };
-    const res = await this.request<AddTorrentResponse>('web.add_torrents', [[{ path, options }]]);
+    const res = await this.request<BooleanStatus>('web.add_torrents', [[{ path, options }]]);
 
-    if (res.body.result[0][0] === false) {
+    if (res.body.result === false) {
       throw new Error('Failed to add torrent');
     }
 
