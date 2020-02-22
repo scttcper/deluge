@@ -514,6 +514,11 @@ export class Deluge implements TorrentClient {
     return req.body;
   }
 
+  async updateTorrentTrackers(torrentId: string): Promise<DefaultResponse> {
+    const req = await this.request<DefaultResponse>('core.force_reannounce', [[torrentId]]);
+    return req.body;
+  }
+
   async verifyTorrent(torrentId: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.force_recheck', [[torrentId]]);
     return req.body;
