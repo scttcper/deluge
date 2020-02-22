@@ -208,6 +208,12 @@ describe('Deluge', () => {
     const key = Object.keys(res.result.torrents)[0];
     await deluge.verifyTorrent(key);
   });
+  it('should update torrent trackers', async () => {
+    const deluge = new Deluge({ baseUrl });
+    const res = await setupTorrent(deluge);
+    const key = Object.keys(res.result.torrents)[0];
+    await deluge.updateTorrentTrackers(key);
+  });
   it('should add label', async () => {
     const client = new Deluge({ baseUrl });
     const list = await setupTorrent(client);
