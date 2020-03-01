@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@types/jest": "25.1.1",
-    "@types/node": "13.7.0",
+    "@types/node": "13.7.7",
     "@types/tough-cookie": "2.3.6",
     "@types/url-join": "4.0.0",
     "@typescript-eslint/eslint-plugin": "2.18.0",
