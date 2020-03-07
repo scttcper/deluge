@@ -34,7 +34,7 @@
     "url-join": "^4.0.1"
   },
   "devDependencies": {
-    "@types/jest": "25.1.1",
+    "@types/jest": "25.1.4",
     "@types/node": "13.7.7",
     "@types/tough-cookie": "2.3.6",
     "@types/url-join": "4.0.0",
