@@ -29,27 +29,27 @@
   "dependencies": {
     "@ctrl/shared-torrent": "^2.0.0",
     "form-data": "^3.0.0",
-    "got": "^10.4.0",
+    "got": "^10.7.0",
     "tough-cookie": "^3.0.1",
     "url-join": "^4.0.1"
   },
   "devDependencies": {
     "@types/jest": "25.1.4",
     "@types/node": "13.9.8",
-    "@types/tough-cookie": "2.3.7",
+    "@types/tough-cookie": "4.0.0",
     "@types/url-join": "4.0.0",
-    "@typescript-eslint/eslint-plugin": "2.18.0",
-    "@typescript-eslint/parser": "2.18.0",
+    "@typescript-eslint/eslint-plugin": "2.26.0",
+    "@typescript-eslint/parser": "2.26.0",
     "eslint": "6.8.0",
     "eslint-config-xo-space": "0.24.0",
-    "eslint-config-xo-typescript": "0.24.1",
+    "eslint-config-xo-typescript": "0.27.0",
     "eslint-plugin-import": "2.20.2",
-    "jest": "25.1.0",
+    "jest": "25.2.4",
     "p-wait-for": "3.1.0",
-    "semantic-release": "17.0.2",
-    "ts-jest": "25.1.0",
-    "typedoc": "0.16.9",
-    "typescript": "3.7.5"
+    "semantic-release": "17.0.4",
+    "ts-jest": "25.3.0",
+    "typedoc": "0.17.3",
+    "typescript": "3.8.3"
   },
   "jest": {
     "preset": "ts-jest",

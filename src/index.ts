@@ -230,7 +230,7 @@ export class Deluge implements TorrentClient {
     });
 
     // repsonse is json but in a string, cannot use native got.json()
-    return JSON.parse(res.body);
+    return JSON.parse(res.body) as UploadResponse;
   }
 
   async addTorrent(
@@ -264,7 +264,7 @@ export class Deluge implements TorrentClient {
     };
     const res = await this.request<BooleanStatus>('web.add_torrents', [[{ path, options }]]);
 
-    if (res.body.result === false) {
+    if (!res.body.result) {
       throw new Error('Failed to add torrent');
     }
 
@@ -285,6 +285,7 @@ export class Deluge implements TorrentClient {
     }
 
     const res = await this.addTorrent(torrent, torrentOptions);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const torrentHash = res.result[0][1];
 
     if (options.label) {

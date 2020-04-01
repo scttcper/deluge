@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import path from 'path';
 import pWaitFor from 'p-wait-for';
 import fs from 'fs';

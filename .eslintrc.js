@@ -16,5 +16,7 @@ module.exports = {
     '@typescript-eslint/promise-function-async': 0,
     '@typescript-eslint/unified-signatures': 0,
     '@typescript-eslint/no-explicit-any': 0,
+    '@typescript-eslint/prefer-readonly-parameter-types': 0,
+    '@typescript-eslint/no-unsafe-call': 0,
   },
 };
