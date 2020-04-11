@@ -75,3 +75,19 @@ transmission - https://github.com/TypeCtrl/transmission
 qbittorrent - https://github.com/TypeCtrl/qbittorrent  
 utorrent - https://github.com/TypeCtrl/utorrent  
 rtorrent - https://github.com/TypeCtrl/rtorrent  
+
+### React Native
+Works the same, but you must add an `fs` alias in your babel config:
+
+```js
+    plugins: [
+			[
+				'module-resolver',
+				{
+					alias: {
+						fs: './.expo/shim.js',
+					},
+				},
+			],
+		],
+```

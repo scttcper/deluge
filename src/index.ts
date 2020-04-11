@@ -1,7 +1,7 @@
-import FormData from 'form-data';
 import fs from 'fs';
-import got, { Response } from 'got';
-import { Cookie } from 'tough-cookie';
+import FormData from 'form-data';
+import fetch from 'cross-fetch';
+import { Cookie, CookieJar, CookieAccessInfo } from 'cookiejar';
 import urljoin from 'url-join';
 
 import {
@@ -41,6 +41,43 @@ const defaults: TorrentSettings = {
   password: 'deluge',
   timeout: 5000,
 };
+
+const MANUAL_COOKIE_MANAGEMENT =
+  // eslint-disable-next-line no-undef
+  typeof document === 'undefined' && typeof navigator === 'undefined';
+
+function getCookie(res: { headers: Headers }, name = '_session_id', path = '/json') {
+  function splitCookies(joinedString: string | null) {
+    const COOKIE_JOIN_PATTERN = /,\s?([a-z0-9-_]+=)/i;
+
+    const zip = (cookies: string[], str: string) => {
+      const previous = cookies.length - 1;
+      if (cookies[previous] && cookies[previous].endsWith('=')) {
+        cookies[previous] += str;
+        return cookies;
+      }
+
+      return [...cookies, str];
+    };
+
+    if (joinedString === null) {
+      return [];
+    }
+
+    return (
+      joinedString
+        .split(COOKIE_JOIN_PATTERN)
+        // The split pattern results in something like: [key=, value, key=, value]
+        // we need [key=value, key=value], the reduce will give us that.
+        .reduce(zip, [])
+    );
+  }
+
+  const cookieJar = new CookieJar();
+  const cookies = splitCookies(res.headers.get('set-cookie'));
+  cookieJar.setCookies(cookies);
+  return cookieJar.getCookie(name, { path } as CookieAccessInfo);
+}
 
 export class Deluge implements TorrentClient {
   config: TorrentSettings;
@@ -124,8 +161,8 @@ export class Deluge implements TorrentClient {
   async checkSession(): Promise<boolean> {
     // cookie is missing or expires in x seconds
     if (this._cookie) {
-      // eslint-disable-next-line new-cap
-      if (this._cookie.TTL() < 5000) {
+      const ttl = this._cookie.expiration_date - Date.now();
+      if (ttl < 5000) {
         this.resetSession();
         return false;
       }
@@ -156,11 +193,11 @@ export class Deluge implements TorrentClient {
   async login(): Promise<boolean> {
     this.resetSession();
     const res = await this.request<BooleanStatus>('auth.login', [this.config.password], false);
-    if (!res.body.result || !res.headers || !res.headers['set-cookie']) {
+    if (!res.body.result || !res.headers || !res.headers.has('set-cookie')) {
       throw new Error('Auth failed, incorrect password');
     }
 
-    this._cookie = Cookie.parse(res.headers['set-cookie'][0]);
+    this._cookie = getCookie(res);
     return true;
   }
 
@@ -210,7 +247,8 @@ export class Deluge implements TorrentClient {
 
     const form = new FormData();
     if (typeof torrent === 'string') {
-      if (fs.existsSync(torrent)) {
+      // In react-native, fs is shimmed...
+      if (fs.existsSync && fs.existsSync(torrent)) {
         form.append('file', Buffer.from(fs.readFileSync(torrent)));
       } else {
         form.append('file', Buffer.from(torrent, 'base64'));
@@ -220,8 +258,10 @@ export class Deluge implements TorrentClient {
     }
 
     const url = urljoin(this.config.baseUrl, '/upload');
-    const res = await got.post(url, {
+    const res = await fetch(url, {
+      method: 'POST',
       headers: form.getHeaders(),
+      // @ts-ignore
       body: form,
       retry: 0,
       // allow proxy agent
@@ -229,8 +269,7 @@ export class Deluge implements TorrentClient {
       timeout: this.config.timeout,
     });
 
-    // repsonse is json but in a string, cannot use native got.json()
-    return JSON.parse(res.body) as UploadResponse;
+    return res.json();
   }
 
   async addTorrent(
@@ -340,13 +379,13 @@ export class Deluge implements TorrentClient {
       this.config.password,
       password,
     ]);
-    if (!res.body.result || !res.headers || !res.headers['set-cookie']) {
+    if (!res.body.result || !res.headers || !res.headers.has('set-cookie')) {
       throw new Error('Old password incorrect');
     }
 
     // update current password to new password
     this.config.password = password;
-    this._cookie = Cookie.parse(res.headers['set-cookie'][0]);
+    this._cookie = getCookie(res);
     return res.body;
   }
 
@@ -595,7 +634,7 @@ export class Deluge implements TorrentClient {
     params: any[] = [],
     needsAuth = true,
     autoConnect = true,
-  ): Promise<Response<T>> {
+  ): Promise<{ body: T; headers: Headers }> {
     if (this._msgId === 4096) {
       this._msgId = 0;
     }
@@ -611,23 +650,43 @@ export class Deluge implements TorrentClient {
       }
     }
 
-    const headers: any = {
-      Cookie: this._cookie && this._cookie.cookieString(),
+    let headers: any = {
+      'content-type': 'application/json',
+      accept: 'application/json',
     };
+
+    if (this._cookie && needsAuth && MANUAL_COOKIE_MANAGEMENT) {
+      headers = {
+        ...headers,
+        cookie: this._cookie.toValueString(),
+      };
+    }
+
     const url = urljoin(this.config.baseUrl, this.config.path);
-    return got.post(url, {
-      json: {
+    const res = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({
         method,
         params,
         id: this._msgId++,
-      },
+      }),
       headers,
-      retry: 0,
       // allow proxy agent
       agent: this.config.agent,
       timeout: this.config.timeout,
-      responseType: 'json',
-    });
+    } as RequestInit);
+
+    const body = (await res.json()) as T;
+    // @ts-ignore - Body wasn't the shape of T because response error.
+    if (!res.ok || body.error) {
+      // @ts-ignore
+      throw new Error((body.error as Error).message);
+    }
+
+    return {
+      headers: res.headers,
+      body,
+    };
   }
 
   private _normalizeTorrentData(id: string, torrent: Torrent): NormalizedTorrent {

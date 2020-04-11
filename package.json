@@ -28,12 +28,13 @@
   },
   "dependencies": {
     "@ctrl/shared-torrent": "^2.0.0",
+    "cookiejar": "^2.1.2",
+    "cross-fetch": "^3.0.4",
     "form-data": "^3.0.0",
-    "got": "^10.7.0",
-    "tough-cookie": "^3.0.1",
     "url-join": "^4.0.1"
   },
   "devDependencies": {
+    "@types/cookiejar": "^2.1.1",
     "@types/jest": "25.1.4",
     "@types/node": "13.9.8",
     "@types/tough-cookie": "4.0.0",
