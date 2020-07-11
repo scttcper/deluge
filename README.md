@@ -1,4 +1,4 @@
-# deluge [![npm](https://img.shields.io/npm/v/@ctrl/deluge.svg?maxAge=3600)](https://www.npmjs.com/package/@ctrl/deluge) [![CircleCI](https://circleci.com/gh/TypeCtrl/deluge.svg?style=svg)](https://circleci.com/gh/TypeCtrl/deluge) [![coverage status](https://codecov.io/gh/typectrl/deluge/branch/master/graph/badge.svg)](https://codecov.io/gh/typectrl/deluge)
+# deluge [![npm](https://img.shields.io/npm/v/@ctrl/deluge.svg?maxAge=3600)](https://www.npmjs.com/package/@ctrl/deluge) [![CircleCI](https://circleci.com/gh/scttcper/deluge.svg?style=svg)](https://circleci.com/gh/scttcper/deluge) [![coverage status](https://codecov.io/gh/scttcper/deluge/branch/master/graph/badge.svg)](https://codecov.io/gh/scttcper/deluge)
 
 > TypeScript api wrapper for [deluge](https://deluge-torrent.org/) using [got](https://github.com/sindresorhus/got)
 
@@ -26,7 +26,7 @@ async function main() {
 
 ### API
 
-Docs: https://deluge.netlify.com/  
+Docs: https://deluge.vercel.app   
 
 ### Normalized API
 These functions have been normalized between torrent clients. Can easily support multiple torrent clients. See below for alternative supported torrent clients
@@ -71,7 +71,7 @@ console.log(res);
 ```
 
 ### See Also
-transmission - https://github.com/TypeCtrl/transmission  
-qbittorrent - https://github.com/TypeCtrl/qbittorrent  
-utorrent - https://github.com/TypeCtrl/utorrent  
-rtorrent - https://github.com/TypeCtrl/rtorrent  
+transmission - https://github.com/scttcper/transmission  
+qbittorrent - https://github.com/scttcper/qbittorrent  
+utorrent - https://github.com/scttcper/utorrent  
+rtorrent - https://github.com/scttcper/rtorrent  

@@ -4,13 +4,14 @@
   "description": "TypeScript api wrapper for deluge using got",
   "author": "Scott Cooper <scttcper@gmail.com>",
   "license": "MIT",
-  "repository": "typectrl/deluge",
+  "repository": "scttcper/deluge",
+  "homepage": "https://deluge.vercel.app",
   "keywords": [
     "deluge",
     "typescript"
   ],
-  "main": "./dist/index.js",
-  "typings": "./dist/index.d.ts",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "files": [
     "dist"
   ],
@@ -23,33 +24,26 @@
     "build:docs": "typedoc --out docs --hideGenerator --target ES6 --mode file src && touch docs/.nojekyll",
     "test": "jest --runInBand",
     "test:watch": "jest --watch --runInBand",
-    "test:ci": "jest --runInBand --coverage --no-cache",
-    "semantic-release": "semantic-release"
+    "test:ci": "jest --runInBand --coverage --no-cache"
   },
   "dependencies": {
-    "@ctrl/shared-torrent": "^3.0.0",
+    "@ctrl/shared-torrent": "^3.0.1",
     "form-data": "^3.0.0",
-    "got": "^11.0.2",
+    "got": "^11.5.0",
     "tough-cookie": "^4.0.0",
     "url-join": "^4.0.1"
   },
   "devDependencies": {
-    "@types/jest": "25.2.3",
-    "@types/node": "13.13.12",
+    "@ctrl/eslint-config": "1.0.3",
+    "@jest/globals": "26.1.0",
+    "@types/node": "14.0.22",
     "@types/tough-cookie": "4.0.0",
     "@types/url-join": "4.0.0",
-    "@typescript-eslint/eslint-plugin": "2.30.0",
-    "@typescript-eslint/parser": "2.30.0",
-    "eslint": "6.8.0",
-    "eslint-config-xo-space": "0.25.0",
-    "eslint-config-xo-typescript": "0.28.0",
-    "eslint-plugin-import": "2.22.0",
-    "jest": "25.5.4",
+    "jest": "26.1.0",
     "p-wait-for": "3.1.0",
-    "semantic-release": "17.1.1",
-    "ts-jest": "25.4.0",
-    "typedoc": "0.17.6",
-    "typescript": "3.8.3"
+    "ts-jest": "26.1.1",
+    "typedoc": "0.17.8",
+    "typescript": "3.9.6"
   },
   "jest": {
     "preset": "ts-jest",

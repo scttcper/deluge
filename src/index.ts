@@ -136,10 +136,9 @@ export class Deluge implements TorrentClient {
     if (this._cookie) {
       try {
         const check = await this.request<BooleanStatus>('auth.check_session', undefined, false);
-        if (check.body && check.body.result) {
+        if (check?.body?.result) {
           return true;
         }
-        // tslint:disable-next-line:no-unused
       } catch {
         // do nothing
       }
@@ -285,7 +284,6 @@ export class Deluge implements TorrentClient {
     }
 
     const res = await this.addTorrent(torrent, torrentOptions);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const torrentHash = res.result[0][1];
 
     if (options.label) {
@@ -590,6 +588,7 @@ export class Deluge implements TorrentClient {
     return req.body;
   }
 
+  // eslint-disable-next-line @typescript-eslint/ban-types
   async request<T extends object>(
     method: string,
     params: any[] = [],
@@ -612,7 +611,7 @@ export class Deluge implements TorrentClient {
     }
 
     const headers: any = {
-      Cookie: this._cookie && this._cookie.cookieString(),
+      Cookie: this._cookie?.cookieString?.(),
     };
     const url = urljoin(this.config.baseUrl, this.config.path);
     return got.post(url, {

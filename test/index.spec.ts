@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable no-await-in-loop */
+import { expect, beforeAll, afterEach, describe, it } from '@jest/globals';
 import path from 'path';
 import pWaitFor from 'p-wait-for';
 import fs from 'fs';
