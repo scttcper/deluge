@@ -1,9 +1,9 @@
+import { existsSync, readFileSync } from 'fs';
+
 import FormData from 'form-data';
-import fs from 'fs';
 import got, { Response } from 'got';
 import { Cookie } from 'tough-cookie';
-import urljoin from 'url-join';
-
+import { urljoin } from '@ctrl/url-join';
 import {
   AddTorrentOptions as NormalizedAddTorrentOptions,
   AllClientData,
@@ -33,6 +33,7 @@ import {
   TorrentStatus,
   Tracker,
   UploadResponse,
+  AddTorrentResponse,
 } from './types';
 
 const defaults: TorrentSettings = {
@@ -209,8 +210,8 @@ export class Deluge implements TorrentClient {
 
     const form = new FormData();
     if (typeof torrent === 'string') {
-      if (fs.existsSync(torrent)) {
-        form.append('file', Buffer.from(fs.readFileSync(torrent)));
+      if (existsSync(torrent)) {
+        form.append('file', Buffer.from(readFileSync(torrent)));
       } else {
         form.append('file', Buffer.from(torrent, 'base64'));
       }
@@ -235,7 +236,7 @@ export class Deluge implements TorrentClient {
   async addTorrent(
     torrent: string | Buffer,
     config: Partial<AddTorrentOptions> = {},
-  ): Promise<BooleanStatus> {
+  ): Promise<AddTorrentResponse> {
     const upload = await this.upload(torrent);
     if (!upload.success || !upload.files.length) {
       throw new Error('Failed to upload');
@@ -261,7 +262,7 @@ export class Deluge implements TorrentClient {
       super_seeding: false,
       ...config,
     };
-    const res = await this.request<BooleanStatus>('web.add_torrents', [[{ path, options }]]);
+    const res = await this.request<AddTorrentResponse>('web.add_torrents', [[{ path, options }]]);
 
     if (!res.body.result) {
       throw new Error('Failed to add torrent');

@@ -19,6 +19,10 @@ export interface ListMethods extends DefaultResponse {
   result: string[];
 }
 
+export interface AddTorrentResponse extends DefaultResponse {
+  result: Array<[boolean, string]>;
+}
+
 // {"files": ["/tmp/delugeweb-5Q9ttR/tmpL7xhth.torrent"], "success": true}
 /**
  * ex -
