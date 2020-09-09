@@ -121,7 +121,6 @@ describe('Deluge', () => {
     expect(res1.result).toBe(true);
     expect(deluge.config.password).toBe(oldPassword);
     deluge.config.password = 'wrongpassword';
-    // tslint:disable-next-line no-floating-promises
     await expect(deluge.changePassword('shouldfail')).rejects.toThrowError();
   });
   it('should list methods', async () => {
