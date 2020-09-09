@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'fs';
 import FormData from 'form-data';
 import got, { Response } from 'got';
 import { Cookie } from 'tough-cookie';
-import { urljoin } from '@ctrl/url-join';
+import { urlJoin } from '@ctrl/url-join';
 import {
   AddTorrentOptions as NormalizedAddTorrentOptions,
   AllClientData,
@@ -219,7 +219,7 @@ export class Deluge implements TorrentClient {
       form.append('file', torrent);
     }
 
-    const url = urljoin(this.config.baseUrl, '/upload');
+    const url = urlJoin(this.config.baseUrl, '/upload');
     const res = await got.post(url, {
       headers: form.getHeaders(),
       body: form,
@@ -614,7 +614,7 @@ export class Deluge implements TorrentClient {
     const headers: any = {
       Cookie: this._cookie?.cookieString?.(),
     };
-    const url = urljoin(this.config.baseUrl, this.config.path);
+    const url = urlJoin(this.config.baseUrl, this.config.path);
     return got.post(url, {
       json: {
         method,
