@@ -534,6 +534,11 @@ export class Deluge implements TorrentClient {
     return req.body;
   }
 
+  async removeLabel(label: string): Promise<DefaultResponse> {
+    const req = await this.request<DefaultResponse>('label.remove', [label]);
+    return req.body;
+  }
+
   async getLabels(): Promise<ListMethods> {
     const req = await this.request<ListMethods>('label.get_labels', []);
     return req.body;
