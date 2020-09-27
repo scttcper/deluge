@@ -211,12 +211,12 @@ export class Deluge implements TorrentClient {
     const form = new FormData();
     if (typeof torrent === 'string') {
       if (existsSync(torrent)) {
-        form.append('file', Buffer.from(readFileSync(torrent)));
+        form.append('file', Buffer.from(readFileSync(torrent)), 'temp.torrent');
       } else {
-        form.append('file', Buffer.from(torrent, 'base64'));
+        form.append('file', Buffer.from(torrent, 'base64'), 'temp.torrent');
       }
     } else {
-      form.append('file', torrent);
+      form.append('file', torrent, 'temp.torrent');
     }
 
     const url = urlJoin(this.config.baseUrl, '/upload');
