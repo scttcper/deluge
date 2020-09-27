@@ -620,7 +620,7 @@ export class Deluge implements TorrentClient {
       Cookie: this._cookie?.cookieString?.(),
     };
     const url = urlJoin(this.config.baseUrl, this.config.path);
-    return got.post(url, {
+    const res: Response<T> = await got.post(url, {
       json: {
         method,
         params,
@@ -633,6 +633,14 @@ export class Deluge implements TorrentClient {
       timeout: this.config.timeout,
       responseType: 'json',
     });
+
+    const err = (res.body as {error: unknown})?.error ?? (typeof res.body === 'string' && res.body);
+
+    if (err) {
+      throw new Error((err as Error).message || err as string);
+    }
+
+    return res;
   }
 
   private _normalizeTorrentData(id: string, torrent: Torrent): NormalizedTorrent {
