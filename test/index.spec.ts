@@ -219,7 +219,9 @@ describe('Deluge', () => {
     const client = new Deluge({ baseUrl });
     const list = await setupTorrent(client);
     const key = Object.keys(list.result.torrents)[0];
+    await client.addLabel('swag');
     const res = await client.setTorrentLabel(key, 'swag');
+    await client.removeLabel('swag');
     expect(res.result).toBe(null);
   });
   it('should pause/resume torrents', async () => {
@@ -285,9 +287,9 @@ describe('Deluge', () => {
       label: 'test',
     });
     expect(torrent.connectedPeers).toBeGreaterThanOrEqual(0);
-    expect(torrent.connectedSeeds).toBe(0);
-    expect(torrent.downloadSpeed).toBe(0);
-    expect(torrent.eta).toBe(0);
+    expect(torrent.connectedSeeds).toBeGreaterThanOrEqual(0);
+    expect(torrent.downloadSpeed).toBeGreaterThanOrEqual(0);
+    expect(torrent.eta).toBeGreaterThanOrEqual(0);
     // expect(torrent.isCompleted).toBe(false);
     // its setting the label but it takes an unknown number of seconds to save to db
     // expect(torrent.label).toBe('');
@@ -298,12 +300,12 @@ describe('Deluge', () => {
     // expect(torrent.savePath).toBe('/downloads/');
     // expect(torrent.state).toBe(TorrentState.checking);
     // expect(torrent.stateMessage).toBe('');
-    expect(torrent.totalDownloaded).toBe(0);
+    expect(torrent.totalDownloaded).toBeGreaterThanOrEqual(0);
     expect(torrent.totalPeers).toBe(-1);
     expect(torrent.totalSeeds).toBe(-1);
     expect(torrent.totalSelected).toBe(1953349632);
     // expect(torrent.totalSize).toBe(undefined);
-    expect(torrent.totalUploaded).toBe(0);
-    expect(torrent.uploadSpeed).toBe(0);
+    expect(torrent.totalUploaded).toBeGreaterThanOrEqual(0);
+    expect(torrent.uploadSpeed).toBeGreaterThanOrEqual(0);
   }, 15000);
 });

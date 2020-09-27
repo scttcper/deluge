@@ -211,12 +211,12 @@ export class Deluge implements TorrentClient {
     const form = new FormData();
     if (typeof torrent === 'string') {
       if (existsSync(torrent)) {
-        form.append('file', Buffer.from(readFileSync(torrent)));
+        form.append('file', Buffer.from(readFileSync(torrent)), 'temp.torrent');
       } else {
-        form.append('file', Buffer.from(torrent, 'base64'));
+        form.append('file', Buffer.from(torrent, 'base64'), 'temp.torrent');
       }
     } else {
-      form.append('file', torrent);
+      form.append('file', torrent, 'temp.torrent');
     }
 
     const url = urlJoin(this.config.baseUrl, '/upload');
@@ -534,6 +534,11 @@ export class Deluge implements TorrentClient {
     return req.body;
   }
 
+  async removeLabel(label: string): Promise<DefaultResponse> {
+    const req = await this.request<DefaultResponse>('label.remove', [label]);
+    return req.body;
+  }
+
   async getLabels(): Promise<ListMethods> {
     const req = await this.request<ListMethods>('label.get_labels', []);
     return req.body;
@@ -615,7 +620,7 @@ export class Deluge implements TorrentClient {
       Cookie: this._cookie?.cookieString?.(),
     };
     const url = urlJoin(this.config.baseUrl, this.config.path);
-    return got.post(url, {
+    const res: Response<T> = await got.post(url, {
       json: {
         method,
         params,
@@ -628,6 +633,14 @@ export class Deluge implements TorrentClient {
       timeout: this.config.timeout,
       responseType: 'json',
     });
+
+    const err = (res.body as {error: unknown})?.error ?? (typeof res.body === 'string' && res.body);
+
+    if (err) {
+      throw new Error((err as Error).message || err as string);
+    }
+
+    return res;
   }
 
   private _normalizeTorrentData(id: string, torrent: Torrent): NormalizedTorrent {
