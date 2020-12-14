@@ -376,7 +376,7 @@ export class Deluge implements TorrentClient {
 
   async listTorrents(
     additionalFields: string[] = [],
-    filter: { [key: string]: string } = {},
+    filter: Record<string, string> = {},
   ): Promise<TorrentListResponse> {
     const fields = [
       'distributed_copies',
@@ -634,10 +634,11 @@ export class Deluge implements TorrentClient {
       responseType: 'json',
     });
 
-    const err = (res.body as {error: unknown})?.error ?? (typeof res.body === 'string' && res.body);
+    const err =
+      (res.body as { error: unknown })?.error ?? (typeof res.body === 'string' && res.body);
 
     if (err) {
-      throw new Error((err as Error).message || err as string);
+      throw new Error((err as Error).message || (err as string));
     }
 
     return res;

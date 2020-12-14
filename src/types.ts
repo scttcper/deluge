@@ -78,9 +78,7 @@ export interface TorrentContentDir {
 export interface TorrentInfo extends DefaultResponse {
   result: {
     files_tree: {
-      contents: {
-        [key: string]: TorrentContentDir | TorrentContentFile;
-      };
+      contents: Record<string, TorrentContentDir | TorrentContentFile>;
     };
     name: string;
     info_hash: string;
@@ -112,7 +110,7 @@ export interface TorrentListResponse extends DefaultResponse {
 export interface TorrentList {
   stats: Stats;
   connected: boolean;
-  torrents: { [key: string]: Torrent };
+  torrents: Record<string, Torrent>;
   filters: TorrentFilters;
 }
 
@@ -216,7 +214,7 @@ export interface TorrentPeers {
 }
 
 export interface TorrentFiles extends DefaultResponse {
-  result: { [key: string]: TorrentContentDir | TorrentContentFile };
+  result: Record<string, TorrentContentDir | TorrentContentFile>;
 }
 
 export interface TorrentOptions {
@@ -381,7 +379,7 @@ export interface DelugeSettings {
    * default: -1
    */
   max_download_speed_per_torrent: number;
-  enabled_plugins: [];
+  enabled_plugins: any[];
   // "autoadd_location": deluge.common.get_default_download_dir(),
   /**
    * default: False
