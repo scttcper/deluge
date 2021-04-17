@@ -233,6 +233,22 @@ export class Deluge implements TorrentClient {
     return JSON.parse(res.body) as UploadResponse;
   }
 
+  /**
+   * Download a torrent from url, pass the result to {@link Deluge.addTorrent}
+   * @param url
+   * @param cookies
+   * @returns file path
+   */
+  async downloadFromUrl(url: string, cookies = ''): Promise<string> {
+    const res = await this.request<StringStatus>('web.download_torrent_from_url', [url, cookies]);
+
+    if (!res.body.result) {
+      throw new Error('Failed to download torrent');
+    }
+
+    return res.body.result;
+  }
+
   async addTorrent(
     torrent: string | Buffer,
     config: Partial<AddTorrentOptions> = {},
