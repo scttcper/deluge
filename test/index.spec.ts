@@ -308,4 +308,21 @@ describe('Deluge', () => {
     expect(torrent.totalUploaded).toBeGreaterThanOrEqual(0);
     expect(torrent.uploadSpeed).toBeGreaterThanOrEqual(0);
   }, 15000);
+  it('should download from url', async () => {
+    const client = new Deluge({ baseUrl });
+    const result = await client.downloadFromUrl(
+      'https://releases.ubuntu.com/20.10/ubuntu-20.10-desktop-amd64.iso.torrent',
+    );
+    expect(result).toContain('/tmp/');
+    await client.addTorrent(torrentFile, { add_paused: true });
+    await pWaitFor(
+      async () => {
+        const r = await client.listTorrents();
+        return Object.keys(r.result.torrents).length === 1;
+      },
+      { timeout: 10000 },
+    );
+    const res = await client.listTorrents();
+    expect(Object.keys(res.result.torrents)).toHaveLength(1);
+  }, 15000);
 });
