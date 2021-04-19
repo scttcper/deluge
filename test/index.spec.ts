@@ -314,7 +314,7 @@ describe('Deluge', () => {
       'https://releases.ubuntu.com/20.10/ubuntu-20.10-desktop-amd64.iso.torrent',
     );
     expect(result).toContain('/tmp/');
-    await client.addTorrent(torrentFile, { add_paused: true });
+    await client.addTorrent(result, { add_paused: true });
     await pWaitFor(
       async () => {
         const r = await client.listTorrents();

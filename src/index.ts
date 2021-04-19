@@ -253,12 +253,19 @@ export class Deluge implements TorrentClient {
     torrent: string | Buffer,
     config: Partial<AddTorrentOptions> = {},
   ): Promise<AddTorrentResponse> {
-    const upload = await this.upload(torrent);
-    if (!upload.success || !upload.files.length) {
-      throw new Error('Failed to upload');
+    let path: string;
+    if (Buffer.isBuffer(torrent) || !torrent.startsWith('/tmp/')) {
+      const upload = await this.upload(torrent);
+      if (!upload.success || !upload.files.length) {
+        throw new Error('Failed to upload');
+      }
+
+      path = upload.files[0];
+    } else {
+      /** Assume paths starting with /tmp/ are from {@link Deluge.addTorrent} */
+      path = torrent;
     }
 
-    const path = upload.files[0];
     const options: AddTorrentOptions = {
       file_priorities: [],
       add_paused: false,
