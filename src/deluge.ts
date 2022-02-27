@@ -1,9 +1,11 @@
-import { existsSync, readFileSync } from 'fs';
+import { existsSync } from 'fs';
 
-import FormData from 'form-data';
+import { File, FormData } from 'formdata-node';
+import { fileFromPath } from 'formdata-node/file-from-path';
 import got, { Response } from 'got';
 import { Cookie } from 'tough-cookie';
-import { urlJoin } from '@ctrl/url-join';
+
+import { magnetDecode } from '@ctrl/magnet-link';
 import {
   AddTorrentOptions as NormalizedAddTorrentOptions,
   AllClientData,
@@ -12,9 +14,11 @@ import {
   TorrentSettings,
   TorrentState,
 } from '@ctrl/shared-torrent';
+import { urlJoin } from '@ctrl/url-join';
 
 import {
   AddTorrentOptions,
+  AddTorrentResponse,
   BooleanStatus,
   ConfigResponse,
   DefaultResponse,
@@ -33,8 +37,7 @@ import {
   TorrentStatus,
   Tracker,
   UploadResponse,
-  AddTorrentResponse,
-} from './types';
+} from './types.js';
 
 const defaults: TorrentSettings = {
   baseUrl: 'http://localhost:8112/',
@@ -209,24 +212,26 @@ export class Deluge implements TorrentClient {
     }
 
     const form = new FormData();
+    const type = { type: 'application/x-bittorrent' };
     if (typeof torrent === 'string') {
       if (existsSync(torrent)) {
-        form.append('file', Buffer.from(readFileSync(torrent)), 'temp.torrent');
+        const file = await fileFromPath(torrent, 'temp.torrent', type);
+        form.set('file', file);
       } else {
-        form.append('file', Buffer.from(torrent, 'base64'), 'temp.torrent');
+        form.set('file', new File([Buffer.from(torrent, 'base64')], 'file.torrent', type));
       }
     } else {
-      form.append('file', torrent, 'temp.torrent');
+      const file = new File([torrent], 'torrent', type);
+      form.set('file', file);
     }
 
     const url = urlJoin(this.config.baseUrl, '/upload');
     const res = await got.post(url, {
-      headers: form.getHeaders(),
       body: form,
-      retry: 0,
+      retry: { limit: 0 },
+      timeout: { request: this.config.timeout },
       // allow proxy agent
-      agent: this.config.agent,
-      timeout: this.config.timeout,
+      ...(this.config.agent ? { agent: this.config.agent } : {}),
     });
 
     // repsonse is json but in a string, cannot use native got.json()
@@ -303,12 +308,22 @@ export class Deluge implements TorrentClient {
       torrentOptions.add_paused = true;
     }
 
-    if (!Buffer.isBuffer(torrent)) {
-      torrent = Buffer.from(torrent);
-    }
+    let torrentHash: string | undefined;
+    if (typeof torrent === 'string' && torrent.startsWith('magnet:')) {
+      torrentHash = magnetDecode(torrent).infoHash;
+      if (!torrentHash) {
+        throw new Error('Magnet did not contain hash');
+      }
 
-    const res = await this.addTorrent(torrent, torrentOptions);
-    const torrentHash = res.result[0][1];
+      await this.addTorrentMagnet(torrent, torrentOptions);
+    } else {
+      if (!Buffer.isBuffer(torrent)) {
+        torrent = Buffer.from(torrent);
+      }
+
+      const res = await this.addTorrent(torrent, torrentOptions);
+      torrentHash = res.result[0][1];
+    }
 
     if (options.label) {
       // sets the label but it might not set the label right away
@@ -650,11 +665,11 @@ export class Deluge implements TorrentClient {
         id: this._msgId++,
       },
       headers,
-      retry: 0,
-      // allow proxy agent
-      agent: this.config.agent,
-      timeout: this.config.timeout,
+      retry: { limit: 0 },
+      timeout: { request: this.config.timeout },
       responseType: 'json',
+      // allow proxy agent
+      ...(this.config.agent ? { agent: this.config.agent } : {}),
     });
 
     const err =
