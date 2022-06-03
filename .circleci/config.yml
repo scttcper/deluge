@@ -4,6 +4,7 @@ orbs:
   codecov: codecov/codecov@3
 jobs:
   test:
+    resource_class: large
     docker:
       - image: cimg/base:stable
       - image: linuxserver/deluge
