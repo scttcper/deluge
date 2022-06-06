@@ -699,7 +699,7 @@ export class Deluge implements TorrentClient {
       state,
       isCompleted,
       stateMessage: torrent.state,
-      progress: torrent.progress,
+      progress: torrent.progress / 100,
       ratio: torrent.ratio,
       dateAdded,
       dateCompleted: undefined,
