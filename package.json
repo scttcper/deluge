@@ -44,7 +44,7 @@
     "p-wait-for": "4.1.0",
     "typedoc": "0.22.17",
     "typescript": "4.7.3",
-    "vitest": "0.14.0"
+    "vitest": "0.14.1"
   },
   "publishConfig": {
     "access": "public"
