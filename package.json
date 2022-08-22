@@ -36,7 +36,7 @@
     "tough-cookie": "^4.1.0"
   },
   "devDependencies": {
-    "@ctrl/eslint-config": "3.4.8",
+    "@ctrl/eslint-config": "3.4.9",
     "@sindresorhus/tsconfig": "3.0.1",
     "@types/node": "18.7.10",
     "@types/tough-cookie": "4.0.2",
