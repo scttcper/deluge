@@ -6,10 +6,8 @@ jobs:
   test:
     docker:
       - image: cimg/node:current
-      - image: linuxserver/deluge
+      - image: linuxserver/deluge@sha256:883b538122d5033c1a7a6218751691e7f766814042d2a7c87a5721bce9aad35e
     steps:
-      - setup_remote_docker
-      - run: docker volume prune -f
       - checkout
       - node/install-packages
       - run:
