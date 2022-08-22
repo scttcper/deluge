@@ -8,6 +8,8 @@ jobs:
       - image: cimg/node:current
       - image: linuxserver/deluge
     steps:
+      - setup_remote_docker
+      - run: docker volume prune -f
       - checkout
       - node/install-packages
       - run:
