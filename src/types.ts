@@ -39,7 +39,7 @@ export interface GetHostsResponse extends DefaultResponse {
   /**
    * host id - ddf084f5f3d7945597991008949ea7b51e6b3d93
    * ip address - 127.0.0.1
-   * not sure? - 58846
+   * port - 58846
    * status - "Online"
    */
   result: Array<[string, string, number, string]>;
@@ -49,12 +49,10 @@ export type HostStatus = 'Online' | 'Offline' | 'Connected';
 export interface GetHostStatusResponse extends DefaultResponse {
   /**
    * host id - ddf084f5f3d7945597991008949ea7b51e6b3d93
-   * ip address - 127.0.0.1
-   * not sure? - 58846
    * status - "Online"
    * version - "1.3.15"
    */
-  result: [string, string, number, HostStatus, string];
+  result: [string, HostStatus, string];
 }
 
 export interface TorrentContentFile {
