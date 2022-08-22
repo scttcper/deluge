@@ -5,11 +5,10 @@ orbs:
 jobs:
   test:
     docker:
-      - image: cimg/base:stable
-      - image: linuxserver/deluge
+      - image: cimg/node:current
+      - image: linuxserver/deluge@sha256:883b538122d5033c1a7a6218751691e7f766814042d2a7c87a5721bce9aad35e
     steps:
       - checkout
-      - node/install
       - node/install-packages
       - run:
           name: lint
