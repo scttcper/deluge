@@ -6,7 +6,7 @@ jobs:
   test:
     docker:
       - image: cimg/node:current
-      - image: linuxserver/deluge@2.0.5
+      - image: linuxserver/deluge:2.0.5
     steps:
       - checkout
       - node/install-packages
