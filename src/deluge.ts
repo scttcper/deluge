@@ -2,21 +2,22 @@ import { existsSync } from 'fs';
 
 import { File, FormData } from 'formdata-node';
 import { fileFromPath } from 'formdata-node/file-from-path';
-import got, { Response } from 'got';
+import type { Response } from 'got';
+import got from 'got';
 import { Cookie } from 'tough-cookie';
 
 import { magnetDecode } from '@ctrl/magnet-link';
-import {
+import type {
   AddTorrentOptions as NormalizedAddTorrentOptions,
   AllClientData,
   NormalizedTorrent,
   TorrentClient,
   TorrentSettings,
-  TorrentState,
 } from '@ctrl/shared-torrent';
+import { TorrentState } from '@ctrl/shared-torrent';
 import { urlJoin } from '@ctrl/url-join';
 
-import {
+import type {
   AddTorrentOptions,
   AddTorrentResponse,
   BooleanStatus,

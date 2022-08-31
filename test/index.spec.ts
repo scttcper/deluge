@@ -6,7 +6,7 @@ import pWaitFor from 'p-wait-for';
 import { afterEach, beforeAll, expect, it } from 'vitest';
 
 import { Deluge } from '../src/index.js';
-import { TorrentListResponse } from '../src/types.js';
+import type { TorrentListResponse } from '../src/types.js';
 
 const baseUrl = 'http://localhost:8112';
 const torrentName = 'ubuntu-18.04.1-desktop-amd64.iso';
