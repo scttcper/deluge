@@ -393,6 +393,7 @@ export class Deluge implements TorrentClient {
     const results: AllClientData = {
       torrents: [],
       labels: [],
+      raw: listTorrents,
     };
     for (const id of Object.keys(listTorrents.result.torrents)) {
       const torrent = listTorrents.result.torrents[id];
@@ -718,6 +719,7 @@ export class Deluge implements TorrentClient {
       totalSize: torrent.total_size,
       totalUploaded: torrent.total_uploaded,
       totalDownloaded: torrent.total_done,
+      raw: torrent,
     };
     return result;
   }
