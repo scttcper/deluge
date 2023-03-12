@@ -29,23 +29,23 @@
   },
   "dependencies": {
     "@ctrl/magnet-link": "^3.1.1",
-    "@ctrl/shared-torrent": "^4.3.1",
+    "@ctrl/shared-torrent": "^4.3.2",
     "@ctrl/url-join": "^2.0.2",
     "formdata-node": "^5.0.0",
-    "got": "^12.5.0",
+    "got": "^12.6.0",
     "tough-cookie": "^4.1.2"
   },
   "devDependencies": {
-    "@ctrl/eslint-config": "3.5.0",
+    "@ctrl/eslint-config": "3.6.2",
     "@sindresorhus/tsconfig": "3.0.1",
-    "@types/node": "18.7.18",
+    "@types/node": "18.15.0",
     "@types/tough-cookie": "4.0.2",
-    "@vitest/coverage-c8": "0.23.4",
-    "c8": "7.12.0",
+    "@vitest/coverage-c8": "0.29.2",
+    "c8": "7.13.0",
     "p-wait-for": "5.0.0",
-    "typedoc": "0.23.15",
-    "typescript": "4.8.3",
-    "vitest": "0.23.4"
+    "typedoc": "0.23.26",
+    "typescript": "4.9.5",
+    "vitest": "0.29.2"
   },
   "publishConfig": {
     "access": "public"
