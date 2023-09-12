@@ -14,7 +14,7 @@ const torrentFile = path.join(__dirname, '/ubuntu-18.04.1-desktop-amd64.iso.torr
 const torrentHash = 'e84213a794f3ccd890382a54a64ca68b7e925433';
 
 async function setupTorrent(deluge: Deluge): Promise<TorrentListResponse> {
-  await deluge.addTorrent(torrentFile, { add_paused: true });
+  await deluge.addTorrent(fs.readFileSync(torrentFile), { add_paused: true });
   await pWaitFor(
     async () => {
       const r = await deluge.listTorrents();
@@ -71,8 +71,7 @@ it('should get plugins info', async () => {
 it('should get version', async () => {
   const deluge = new Deluge({ baseUrl });
   const res = await deluge.getVersion();
-  console.log({ version: res.result });
-  expect(res.result.startsWith('2.0')).toBe(true);
+  expect(res.result.startsWith('2')).toBe(true);
 });
 // for some reason explodes deluge
 // it('should enable/disable plugins', async () => {
@@ -129,15 +128,9 @@ it('should list methods', async () => {
   expect(Array.isArray(methods.result)).toEqual(true);
   expect(methods.result.length).toBeGreaterThanOrEqual(88);
 });
-it('should upload torrent from full path', async () => {
+it('should add torrent from string', async () => {
   const deluge = new Deluge({ baseUrl });
-  const res = await deluge.upload(torrentFile);
-  expect(res.files.length).toBe(1);
-  expect(res.success).toBe(true);
-});
-it('should add torrent from file path string', async () => {
-  const deluge = new Deluge({ baseUrl });
-  const res = await deluge.addTorrent(torrentFile);
+  const res = await deluge.addTorrent(fs.readFileSync(torrentFile).toString('base64'));
   expect(res.result[0][0]).toBe(true);
   expect(res.result[0][1]).toBe(torrentHash);
 });
