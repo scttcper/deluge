@@ -9,6 +9,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      deluge:
+        image: lscr.io/linuxserver/deluge:latest
+        env:
+          PUID: 1000
+          PGID: 1000
+          TZ: Etc/UTC
+        ports:
+          - "8112:8112"
+          - "6881:6881"
+          - "6881:6881/udp"
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -19,14 +30,6 @@ jobs:
           cache: 'npm'
       - name: install dependencies
         run: npm ci
-      - name: start qbittorrent
-        run: |
-            sudo add-apt-repository ppa:deluge-team/stable
-            sudo apt-get update
-            sudo apt-get install deluged deluge-web deluge-console
-            sudo systemctl start deluged
-            sudo mkdir /downloads
-            mkdir ~/downloads
       - name: lint
         run: npm run lint
       - name: test
