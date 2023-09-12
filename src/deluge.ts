@@ -181,7 +181,6 @@ export class Deluge implements TorrentClient {
    */
   async getVersion(): Promise<StringStatus> {
     const req = await this.request<StringStatus>('daemon.get_version');
-    console.log(req);
     return req._data;
   }
 

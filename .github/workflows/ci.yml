@@ -23,7 +23,8 @@ jobs:
         run: |
             sudo add-apt-repository ppa:deluge-team/stable
             sudo apt-get update
-            sudo apt-get install deluge
+            sudo apt-get install deluged deluge-web deluge-console
+            sudo systemctl start deluged
             sudo mkdir /downloads
             mkdir ~/downloads
       - name: lint
