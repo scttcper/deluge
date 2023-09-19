@@ -1,5 +1,5 @@
 /* eslint-disable no-await-in-loop */
-import fs from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import pWaitFor from 'p-wait-for';
@@ -10,11 +10,13 @@ import type { TorrentListResponse } from '../src/types.js';
 
 const baseUrl = 'http://localhost:8112';
 const torrentName = 'ubuntu-18.04.1-desktop-amd64.iso';
-const torrentFile = path.join(__dirname, '/ubuntu-18.04.1-desktop-amd64.iso.torrent');
+const __dirname = new URL('.', import.meta.url).pathname;
+const torrentFilePath = path.join(__dirname, 'ubuntu-18.04.1-desktop-amd64.iso.torrent');
+const torrentFileBuffer = readFileSync(torrentFilePath);
 const torrentHash = 'e84213a794f3ccd890382a54a64ca68b7e925433';
 
 async function setupTorrent(deluge: Deluge): Promise<TorrentListResponse> {
-  await deluge.addTorrent(fs.readFileSync(torrentFile), { add_paused: true });
+  await deluge.addTorrent(torrentFileBuffer, { add_paused: true });
   await pWaitFor(
     async () => {
       const r = await deluge.listTorrents();
@@ -130,19 +132,19 @@ it('should list methods', async () => {
 });
 it('should add torrent from string', async () => {
   const deluge = new Deluge({ baseUrl });
-  const res = await deluge.addTorrent(fs.readFileSync(torrentFile).toString('base64'));
+  const res = await deluge.addTorrent(torrentFileBuffer.toString('base64'));
   expect(res.result[0][0]).toBe(true);
   expect(res.result[0][1]).toBe(torrentHash);
 });
 it('should add torrent from file buffer', async () => {
   const deluge = new Deluge({ baseUrl });
-  const res = await deluge.addTorrent(fs.readFileSync(torrentFile));
+  const res = await deluge.addTorrent(torrentFileBuffer);
   expect(res.result[0][0]).toBe(true);
   expect(res.result[0][1]).toBe(torrentHash);
 });
 it('should add torrent from file contents base64', async () => {
   const deluge = new Deluge({ baseUrl });
-  const contents = Buffer.from(fs.readFileSync(torrentFile)).toString('base64');
+  const contents = Buffer.from(torrentFileBuffer).toString('base64');
   const res = await deluge.addTorrent(contents);
   expect(res.result[0][0]).toBe(true);
   expect(res.result[0][1]).toBe(torrentHash);
@@ -276,7 +278,7 @@ it('should add torrent with normalized response', async () => {
     await client.addLabel('test');
   } catch {}
 
-  const torrent = await client.normalizedAddTorrent(fs.readFileSync(torrentFile), {
+  const torrent = await client.normalizedAddTorrent(torrentFileBuffer, {
     label: 'test',
   });
   expect(torrent.connectedPeers).toBeGreaterThanOrEqual(0);
