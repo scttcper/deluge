@@ -1,10 +1,7 @@
-import { existsSync } from 'fs';
-
-import { File, FormData } from 'formdata-node';
-import { fileFromPath } from 'formdata-node/file-from-path';
-import type { Response } from 'got';
-import got from 'got';
+import { FormData } from 'node-fetch-native';
+import { FetchResponse, ofetch } from 'ofetch';
 import { Cookie } from 'tough-cookie';
+import { joinURL } from 'ufo';
 
 import { magnetDecode } from '@ctrl/magnet-link';
 import type {
@@ -14,9 +11,8 @@ import type {
   TorrentClient,
   TorrentSettings,
 } from '@ctrl/shared-torrent';
-import { TorrentState } from '@ctrl/shared-torrent';
-import { urlJoin } from '@ctrl/url-join';
 
+import { normalizeTorrentData } from './normalizeTorrentData.js';
 import type {
   AddTorrentOptions,
   AddTorrentResponse,
@@ -30,7 +26,6 @@ import type {
   PluginInfo,
   PluginsListResponse,
   StringStatus,
-  Torrent,
   TorrentFiles,
   TorrentInfo,
   TorrentListResponse,
@@ -65,7 +60,7 @@ export class Deluge implements TorrentClient {
 
   async getHosts(): Promise<GetHostsResponse> {
     const res = await this.request<GetHostsResponse>('web.get_hosts', [], true, false);
-    return res.body;
+    return res._data;
   }
 
   /**
@@ -79,7 +74,7 @@ export class Deluge implements TorrentClient {
       true,
       false,
     );
-    return res.body;
+    return res._data;
   }
 
   /**
@@ -99,12 +94,12 @@ export class Deluge implements TorrentClient {
     }
 
     const res = await this.request<ListMethods>('web.connect', [host], true, false);
-    return res.body;
+    return res._data;
   }
 
   async connected(): Promise<boolean> {
     const res = await this.request<BooleanStatus>('web.connected', [], true, false);
-    return res.body.result;
+    return res._data.result;
   }
 
   /**
@@ -113,13 +108,14 @@ export class Deluge implements TorrentClient {
    */
   async disconnect(): Promise<boolean> {
     const res = await this.request<StringStatus>('web.disconnect', [], true, false);
+    const body = res._data;
     // deluge 1.x returns a boolean and 2.x returns a string
-    if (typeof res.body.result === 'boolean') {
-      return res.body.result;
+    if (typeof body.result === 'boolean') {
+      return body.result;
     }
 
     // "Connection was closed cleanly."
-    return res.body.result.includes('closed cleanly');
+    return body.result.includes('closed cleanly');
   }
 
   /**
@@ -141,7 +137,8 @@ export class Deluge implements TorrentClient {
     if (this._cookie) {
       try {
         const check = await this.request<BooleanStatus>('auth.check_session', undefined, false);
-        if (check?.body?.result) {
+        const body = await check.json();
+        if (body?.result) {
           return true;
         }
       } catch {
@@ -160,11 +157,11 @@ export class Deluge implements TorrentClient {
   async login(): Promise<boolean> {
     this.resetSession();
     const res = await this.request<BooleanStatus>('auth.login', [this.config.password], false);
-    if (!res.body.result || !res.headers || !res.headers['set-cookie']) {
+    if (!res.ok || !res.headers?.get('set-cookie')?.length) {
       throw new Error('Auth failed, incorrect password');
     }
 
-    this._cookie = Cookie.parse(res.headers['set-cookie'][0]);
+    this._cookie = Cookie.parse(res.headers.get('set-cookie'));
     return true;
   }
 
@@ -174,8 +171,9 @@ export class Deluge implements TorrentClient {
    */
   async logout(): Promise<boolean> {
     const res = await this.request<BooleanStatus>('auth.delete_session');
+    const body = res._data;
     this.resetSession();
-    return res.body.result;
+    return body.result;
   }
 
   /**
@@ -183,7 +181,7 @@ export class Deluge implements TorrentClient {
    */
   async getVersion(): Promise<StringStatus> {
     const req = await this.request<StringStatus>('daemon.get_version');
-    return req.body;
+    return req._data;
   }
 
   /**
@@ -192,7 +190,7 @@ export class Deluge implements TorrentClient {
    */
   async getTorrentInfo(tmpPath: string): Promise<TorrentInfo> {
     const res = await this.request<TorrentInfo>('web.get_torrent_info', [tmpPath]);
-    return res.body;
+    return res._data;
   }
 
   /**
@@ -202,7 +200,7 @@ export class Deluge implements TorrentClient {
    */
   async listMethods(auth = true): Promise<ListMethods> {
     const req = await this.request<ListMethods>('system.listMethods', undefined, auth);
-    return req.body;
+    return req._data;
   }
 
   async upload(torrent: string | Buffer): Promise<UploadResponse> {
@@ -215,28 +213,24 @@ export class Deluge implements TorrentClient {
     const form = new FormData();
     const type = { type: 'application/x-bittorrent' };
     if (typeof torrent === 'string') {
-      if (existsSync(torrent)) {
-        const file = await fileFromPath(torrent, 'temp.torrent', type);
-        form.set('file', file);
-      } else {
-        form.set('file', new File([Buffer.from(torrent, 'base64')], 'file.torrent', type));
-      }
+      form.set('file', new File([Buffer.from(torrent, 'base64')], 'file.torrent', type));
     } else {
       const file = new File([torrent], 'torrent', type);
       form.set('file', file);
     }
 
-    const url = urlJoin(this.config.baseUrl, '/upload');
-    const res = await got.post(url, {
+    const url = joinURL(this.config.baseUrl, '/upload');
+    const res = await ofetch<UploadResponse>(url, {
+      method: 'POST',
       body: form,
-      retry: { limit: 0 },
-      timeout: { request: this.config.timeout },
-      // allow proxy agent
-      ...(this.config.agent ? { agent: this.config.agent } : {}),
+      retry: 0,
+      timeout: this.config.timeout,
+      parseResponse: JSON.parse,
+      // @ts-expect-error for some reason agent is not in the type
+      agent: this.config.agent,
     });
 
-    // repsonse is json but in a string, cannot use native got.json()
-    return JSON.parse(res.body) as UploadResponse;
+    return res;
   }
 
   /**
@@ -247,12 +241,13 @@ export class Deluge implements TorrentClient {
    */
   async downloadFromUrl(url: string, cookies = ''): Promise<string> {
     const res = await this.request<StringStatus>('web.download_torrent_from_url', [url, cookies]);
+    const body = res._data;
 
-    if (!res.body.result) {
+    if (!body.result) {
       throw new Error('Failed to download torrent');
     }
 
-    return res.body.result;
+    return body.result;
   }
 
   async addTorrent(
@@ -292,12 +287,13 @@ export class Deluge implements TorrentClient {
       ...config,
     };
     const res = await this.request<AddTorrentResponse>('web.add_torrents', [[{ path, options }]]);
+    const body = res._data;
 
-    if (!res.body.result) {
+    if (!body.result) {
       throw new Error('Failed to add torrent');
     }
 
-    return res.body;
+    return body;
   }
 
   async normalizedAddTorrent(
@@ -360,7 +356,7 @@ export class Deluge implements TorrentClient {
     };
     const res = await this.request<BooleanStatus>('core.add_torrent_magnet', [magnet, options]);
 
-    return res.body;
+    return res._data;
   }
 
   /**
@@ -370,7 +366,7 @@ export class Deluge implements TorrentClient {
    */
   async removeTorrent(torrentId: string, removeData = true): Promise<BooleanStatus> {
     const req = await this.request<BooleanStatus>('core.remove_torrent', [torrentId, removeData]);
-    return req.body;
+    return req._data;
   }
 
   async changePassword(password: string): Promise<BooleanStatus> {
@@ -378,14 +374,15 @@ export class Deluge implements TorrentClient {
       this.config.password,
       password,
     ]);
-    if (!res.body.result || !res.headers || !res.headers['set-cookie']) {
+    const body = res._data;
+    if (!body.result || !res.headers.get('set-cookie')?.length) {
       throw new Error('Old password incorrect');
     }
 
     // update current password to new password
     this.config.password = password;
-    this._cookie = Cookie.parse(res.headers['set-cookie'][0]);
-    return res.body;
+    this._cookie = Cookie.parse(res.headers.get('set-cookie'));
+    return body;
   }
 
   async getAllData(): Promise<AllClientData> {
@@ -397,7 +394,7 @@ export class Deluge implements TorrentClient {
     };
     for (const id of Object.keys(listTorrents.result.torrents)) {
       const torrent = listTorrents.result.torrents[id];
-      const torrentData: NormalizedTorrent = this._normalizeTorrentData(id, torrent);
+      const torrentData: NormalizedTorrent = normalizeTorrentData(id, torrent);
       results.torrents.push(torrentData);
     }
 
@@ -450,12 +447,12 @@ export class Deluge implements TorrentClient {
       [...new Set(fields)],
       filter,
     ]);
-    return req.body;
+    return req._data;
   }
 
   async getTorrent(id: string): Promise<NormalizedTorrent> {
     const torrentResponse = await this.getTorrentStatus(id);
-    return this._normalizeTorrentData(id, torrentResponse.result);
+    return normalizeTorrentData(id, torrentResponse.result);
   }
 
   /**
@@ -510,11 +507,12 @@ export class Deluge implements TorrentClient {
       ...additionalFields,
     ];
     const req = await this.request<TorrentStatus>('web.get_torrent_status', [torrentId, fields]);
-    if (!req.body.result || !Object.keys(req.body.result).length) {
+    const body: TorrentStatus = req._data;
+    if (!body.result || !Object.keys(body.result).length) {
       throw new Error('Torrent not found');
     }
 
-    return req.body;
+    return body;
   }
 
   /**
@@ -522,17 +520,17 @@ export class Deluge implements TorrentClient {
    */
   async getTorrentFiles(torrentId: string): Promise<TorrentFiles> {
     const req = await this.request<TorrentFiles>('web.get_torrent_files', [torrentId]);
-    return req.body;
+    return req._data;
   }
 
   async pauseTorrent(torrentId: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.pause_torrent', [[torrentId]]);
-    return req.body;
+    return req._data;
   }
 
   async resumeTorrent(torrentId: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.resume_torrent', [[torrentId]]);
-    return req.body;
+    return req._data;
   }
 
   async setTorrentOptions(
@@ -543,7 +541,7 @@ export class Deluge implements TorrentClient {
       [torrentId],
       options,
     ]);
-    return req.body;
+    return req._data;
   }
 
   async setTorrentTrackers(torrentId: string, trackers: Tracker[] = []): Promise<DefaultResponse> {
@@ -551,87 +549,87 @@ export class Deluge implements TorrentClient {
       [torrentId],
       trackers,
     ]);
-    return req.body;
+    return req._data;
   }
 
   async updateTorrentTrackers(torrentId: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.force_reannounce', [[torrentId]]);
-    return req.body;
+    return req._data;
   }
 
   async verifyTorrent(torrentId: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.force_recheck', [[torrentId]]);
-    return req.body;
+    return req._data;
   }
 
   async setTorrentLabel(torrentId: string, label: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('label.set_torrent', [torrentId, label]);
-    return req.body;
+    return req._data;
   }
 
   async addLabel(label: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('label.add', [label]);
-    return req.body;
+    return req._data;
   }
 
   async removeLabel(label: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('label.remove', [label]);
-    return req.body;
+    return req._data;
   }
 
   async getLabels(): Promise<ListMethods> {
     const req = await this.request<ListMethods>('label.get_labels', []);
-    return req.body;
+    return req._data;
   }
 
   async queueTop(torrentId: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.queue_top', [[torrentId]]);
-    return req.body;
+    return req._data;
   }
 
   async queueBottom(torrentId: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.queue_bottom', [[torrentId]]);
-    return req.body;
+    return req._data;
   }
 
   async queueUp(torrentId: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.queue_up', [[torrentId]]);
-    return req.body;
+    return req._data;
   }
 
   async queueDown(torrentId: string): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.queue_down', [[torrentId]]);
-    return req.body;
+    return req._data;
   }
 
   async getConfig(): Promise<ConfigResponse> {
     const req = await this.request<ConfigResponse>('core.get_config', []);
-    return req.body;
+    return req._data;
   }
 
   async setConfig(config: Partial<DelugeSettings>): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.set_config', [config]);
-    return req.body;
+    return req._data;
   }
 
   async getPlugins(): Promise<PluginsListResponse> {
     const req = await this.request<PluginsListResponse>('web.get_plugins', []);
-    return req.body;
+    return req._data;
   }
 
   async getPluginInfo(plugins: string[]): Promise<PluginInfo> {
     const req = await this.request<PluginInfo>('web.get_plugin_info', plugins);
-    return req.body;
+    return req._data;
   }
 
   async enablePlugin(plugins: string[]): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.enable_plugin', plugins);
-    return req.body;
+    return req._data;
   }
 
   async disablePlugin(plugins: string[]): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.disable_plugin', plugins);
-    return req.body;
+    return req._data;
   }
 
   // eslint-disable-next-line @typescript-eslint/ban-types
@@ -640,7 +638,7 @@ export class Deluge implements TorrentClient {
     params: any[] = [],
     needsAuth = true,
     autoConnect = true,
-  ): Promise<Response<T>> {
+  ): Promise<FetchResponse<T>> {
     if (this._msgId === 4096) {
       this._msgId = 0;
     }
@@ -659,69 +657,31 @@ export class Deluge implements TorrentClient {
     const headers: any = {
       Cookie: this._cookie?.cookieString?.(),
     };
-    const url = urlJoin(this.config.baseUrl, this.config.path);
-    const res: Response<T> = await got.post(url, {
-      json: {
+    const url = joinURL(this.config.baseUrl, this.config.path);
+    const res = await ofetch.raw<T>(url, {
+      method: 'POST',
+      body: JSON.stringify({
         method,
         params,
         id: this._msgId++,
-      },
+      }),
       headers,
-      retry: { limit: 0 },
-      timeout: { request: this.config.timeout },
+      retry: 0,
+      timeout: this.config.timeout,
       responseType: 'json',
-      // allow proxy agent
-      ...(this.config.agent ? { agent: this.config.agent } : {}),
+      parseResponse: JSON.parse,
+      // @ts-expect-error for some reason agent is not in the type
+      agent: this.config.agent,
     });
 
     const err =
-      (res.body as { error: unknown })?.error ?? (typeof res.body === 'string' && res.body);
+      (res.body as any as { error: unknown })?.error ?? (typeof res.body === 'string' && res.body);
 
     if (err) {
       throw new Error((err as Error).message || (err as string));
     }
 
     return res;
-  }
-
-  private _normalizeTorrentData(id: string, torrent: Torrent): NormalizedTorrent {
-    const dateAdded = new Date(torrent.time_added * 1000).toISOString();
-
-    // normalize state to enum
-    let state = TorrentState.unknown;
-    if (Object.keys(TorrentState).includes(torrent.state.toLowerCase())) {
-      state = TorrentState[torrent.state.toLowerCase() as keyof typeof TorrentState];
-    }
-
-    const isCompleted = torrent.progress >= 100;
-
-    const result: NormalizedTorrent = {
-      id,
-      name: torrent.name,
-      state,
-      isCompleted,
-      stateMessage: torrent.state,
-      progress: torrent.progress / 100,
-      ratio: torrent.ratio,
-      dateAdded,
-      dateCompleted: undefined,
-      label: torrent.label,
-      savePath: torrent.save_path,
-      uploadSpeed: torrent.upload_payload_rate,
-      downloadSpeed: torrent.download_payload_rate,
-      eta: torrent.eta,
-      queuePosition: torrent.queue + 1,
-      connectedPeers: torrent.num_peers,
-      connectedSeeds: torrent.num_seeds,
-      totalPeers: torrent.total_peers,
-      totalSeeds: torrent.total_seeds,
-      totalSelected: torrent.total_wanted,
-      totalSize: torrent.total_size,
-      totalUploaded: torrent.total_uploaded,
-      totalDownloaded: torrent.total_done,
-      raw: torrent,
-    };
-    return result;
   }
 
   private async _validateAuth(): Promise<void> {

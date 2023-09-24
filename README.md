@@ -1,4 +1,4 @@
-# deluge [![npm](https://img.shields.io/npm/v/@ctrl/deluge.svg?maxAge=3600)](https://www.npmjs.com/package/@ctrl/deluge) [![CircleCI](https://circleci.com/gh/scttcper/deluge.svg?style=svg)](https://circleci.com/gh/scttcper/deluge) [![coverage status](https://codecov.io/gh/scttcper/deluge/branch/master/graph/badge.svg)](https://codecov.io/gh/scttcper/deluge)
+# deluge [![npm](https://img.shields.io/npm/v/@ctrl/deluge.svg?maxAge=3600)](https://www.npmjs.com/package/@ctrl/deluge) [![coverage status](https://codecov.io/gh/scttcper/deluge/branch/master/graph/badge.svg)](https://codecov.io/gh/scttcper/deluge)
 
 > TypeScript api wrapper for [deluge](https://deluge-torrent.org/) using [got](https://github.com/sindresorhus/got)
 
@@ -75,3 +75,19 @@ transmission - https://github.com/scttcper/transmission
 qbittorrent - https://github.com/scttcper/qbittorrent  
 utorrent - https://github.com/scttcper/utorrent  
 rtorrent - https://github.com/scttcper/rtorrent  
+
+### Start a test docker container
+
+```
+docker run -d \
+  --name=deluge \
+  -e PUID=1000 \
+  -e PGID=1000 \
+  -e TZ=Etc/UTC \
+  -e DELUGE_LOGLEVEL=error `#optional` \
+  -p 8112:8112 \
+  -p 6881:6881 \
+  -p 6881:6881/udp \
+  --restart unless-stopped \
+  lscr.io/linuxserver/deluge:latest
+```
