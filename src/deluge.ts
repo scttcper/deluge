@@ -2,6 +2,7 @@ import { FormData } from 'node-fetch-native';
 import { FetchResponse, ofetch } from 'ofetch';
 import { Cookie } from 'tough-cookie';
 import { joinURL } from 'ufo';
+import { base64ToUint8Array, isUint8Array, stringToUint8Array } from 'uint8array-extras';
 
 import { magnetDecode } from '@ctrl/magnet-link';
 import type {
@@ -203,7 +204,7 @@ export class Deluge implements TorrentClient {
     return req._data;
   }
 
-  async upload(torrent: string | Buffer): Promise<UploadResponse> {
+  async upload(torrent: string | Uint8Array): Promise<UploadResponse> {
     await this._validateAuth();
     const isConnected = await this.connected();
     if (!isConnected) {
@@ -213,7 +214,7 @@ export class Deluge implements TorrentClient {
     const form = new FormData();
     const type = { type: 'application/x-bittorrent' };
     if (typeof torrent === 'string') {
-      form.set('file', new File([Buffer.from(torrent, 'base64')], 'file.torrent', type));
+      form.set('file', new File([base64ToUint8Array(torrent)], 'file.torrent', type));
     } else {
       const file = new File([torrent], 'torrent', type);
       form.set('file', file);
@@ -251,11 +252,11 @@ export class Deluge implements TorrentClient {
   }
 
   async addTorrent(
-    torrent: string | Buffer,
+    torrent: string | Uint8Array,
     config: Partial<AddTorrentOptions> = {},
   ): Promise<AddTorrentResponse> {
     let path: string;
-    if (Buffer.isBuffer(torrent) || !torrent.startsWith('/tmp/')) {
+    if (isUint8Array(torrent) || !torrent.startsWith('/tmp/')) {
       const upload = await this.upload(torrent);
       if (!upload.success || !upload.files.length) {
         throw new Error('Failed to upload');
@@ -297,7 +298,7 @@ export class Deluge implements TorrentClient {
   }
 
   async normalizedAddTorrent(
-    torrent: string | Buffer,
+    torrent: string | Uint8Array,
     options: Partial<NormalizedAddTorrentOptions> = {},
   ): Promise<NormalizedTorrent> {
     const torrentOptions: Partial<AddTorrentOptions> = {};
@@ -314,8 +315,8 @@ export class Deluge implements TorrentClient {
 
       await this.addTorrentMagnet(torrent, torrentOptions);
     } else {
-      if (!Buffer.isBuffer(torrent)) {
-        torrent = Buffer.from(torrent);
+      if (!isUint8Array(torrent)) {
+        torrent = stringToUint8Array(torrent);
       }
 
       const res = await this.addTorrent(torrent, torrentOptions);
@@ -686,9 +687,7 @@ export class Deluge implements TorrentClient {
 
   private async _validateAuth(): Promise<void> {
     let validAuth = await this.checkSession();
-    if (!validAuth) {
-      validAuth = await this.login();
-    }
+    validAuth ||= await this.login();
 
     if (!validAuth) {
       throw new Error('Invalid Auth');
