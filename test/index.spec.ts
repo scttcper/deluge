@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import pWaitFor from 'p-wait-for';
+import { uint8ArrayToBase64 } from 'uint8array-extras';
 import { afterEach, beforeAll, expect, it } from 'vitest';
 
 import { Deluge } from '../src/index.js';
@@ -144,7 +145,7 @@ it('should add torrent from file buffer', async () => {
 });
 it('should add torrent from file contents base64', async () => {
   const deluge = new Deluge({ baseUrl });
-  const contents = Buffer.from(torrentFileBuffer).toString('base64');
+  const contents = uint8ArrayToBase64(torrentFileBuffer);
   const res = await deluge.addTorrent(contents);
   expect(res.result[0][0]).toBe(true);
   expect(res.result[0][1]).toBe(torrentHash);
