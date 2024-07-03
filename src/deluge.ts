@@ -1,5 +1,5 @@
 import { FormData } from 'node-fetch-native';
-import { FetchResponse, ofetch } from 'ofetch';
+import { ofetch } from 'ofetch';
 import { Cookie } from 'tough-cookie';
 import { joinURL } from 'ufo';
 import { base64ToUint8Array, isUint8Array, stringToUint8Array } from 'uint8array-extras';
@@ -639,7 +639,7 @@ export class Deluge implements TorrentClient {
     params: any[] = [],
     needsAuth = true,
     autoConnect = true,
-  ): Promise<FetchResponse<T>> {
+  ): Promise<ReturnType<typeof ofetch.raw<T>>> {
     if (this._msgId === 4096) {
       this._msgId = 0;
     }

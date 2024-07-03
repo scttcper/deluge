@@ -4,5 +4,5 @@
     "ignoreUnknown": true,
     "ignore": ["dist/*", "public/*"]
   },
-  "extends": ["./node_modules/@ctrl/eslint-config-biome/biome.json"]
+  "extends": ["@ctrl/eslint-config-biome/biome"]
 }

@@ -26,6 +26,7 @@ async function setupTorrent(deluge: Deluge): Promise<TorrentListResponse> {
     { timeout: 10000 },
   );
   const res = await deluge.listTorrents();
+  // biome-ignore lint/nursery/noMisplacedAssertion:
   expect(Object.keys(res.result.torrents)).toHaveLength(1);
   return res;
 }
@@ -277,7 +278,9 @@ it('should add torrent with normalized response', async () => {
   // try adding label
   try {
     await client.addLabel('test');
-  } catch {}
+  } catch {
+    // ignore
+  }
 
   const torrent = await client.normalizedAddTorrent(torrentFileBuffer, {
     label: 'test',
