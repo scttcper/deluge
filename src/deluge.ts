@@ -633,7 +633,6 @@ export class Deluge implements TorrentClient {
     return req._data;
   }
 
-  // eslint-disable-next-line @typescript-eslint/ban-types
   async request<T extends object>(
     method: string,
     params: any[] = [],

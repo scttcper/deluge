@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop */
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
