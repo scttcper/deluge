@@ -363,9 +363,9 @@ export class Deluge implements TorrentClient {
   /**
    *
    * @param torrentId torrent id from list torrents
-   * @param removeData true will delete all data from disk
+   * @param removeData (default: false) If true, remove the data from disk
    */
-  async removeTorrent(torrentId: string, removeData = true): Promise<BooleanStatus> {
+  async removeTorrent(torrentId: string, removeData = false): Promise<BooleanStatus> {
     const req = await this.request<BooleanStatus>('core.remove_torrent', [torrentId, removeData]);
     return req._data;
   }
