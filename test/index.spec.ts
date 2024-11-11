@@ -311,7 +311,6 @@ it('should download from url', async () => {
   const result = await client.downloadFromUrl(
     'https://releases.ubuntu.com/20.10/ubuntu-20.10-desktop-amd64.iso.torrent',
   );
-  console.log(result);
   // Should be a file path but it is different on different systems
   expect(result).toContain('/');
   await client.addTorrent(result, { add_paused: true });

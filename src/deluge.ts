@@ -256,7 +256,7 @@ export class Deluge implements TorrentClient {
   ): Promise<AddTorrentResponse> {
     let path: string;
     // Example temp path: /run/deluged-temp/delugeweb-s0jy917j/ubuntu-20.10-desktop-amd64.iso.torrent
-    if (isUint8Array(torrent) || !torrent.startsWith('/tmp/') || torrent.includes('deluged-temp')) {
+    if (isUint8Array(torrent) || !torrent.startsWith('/tmp/') || !torrent.includes('delugeweb-')) {
       const upload = await this.upload(torrent);
       if (!upload.success || !upload.files.length) {
         throw new Error('Failed to upload');
