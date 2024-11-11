@@ -255,9 +255,7 @@ export class Deluge implements TorrentClient {
     config: Partial<AddTorrentOptions> = {},
   ): Promise<AddTorrentResponse> {
     let path: string;
-    const isUploaded =
-      typeof torrent === 'string' &&
-      (torrent.startsWith('/tmp/') || torrent.includes('delugeweb-'));
+    const isUploaded = typeof torrent === 'string' && torrent.includes('delugeweb-');
     if (isUint8Array(torrent) && !isUploaded) {
       const upload = await this.upload(torrent);
       if (!upload.success || !upload.files.length) {
