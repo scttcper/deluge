@@ -227,8 +227,7 @@ export class Deluge implements TorrentClient {
       retry: 0,
       timeout: this.config.timeout,
       parseResponse: JSON.parse,
-      // @ts-expect-error for some reason agent is not in the type
-      agent: this.config.agent,
+      dispatcher: this.config.dispatcher,
     });
 
     return res;
@@ -670,8 +669,7 @@ export class Deluge implements TorrentClient {
       timeout: this.config.timeout,
       responseType: 'json',
       parseResponse: JSON.parse,
-      // @ts-expect-error for some reason agent is not in the type
-      agent: this.config.agent,
+      dispatcher: this.config.dispatcher,
     });
 
     const err =
