@@ -227,8 +227,7 @@ export class Deluge implements TorrentClient {
       retry: 0,
       timeout: this.config.timeout,
       parseResponse: JSON.parse,
-      // @ts-expect-error for some reason agent is not in the type
-      agent: this.config.agent,
+      dispatcher: this.config.dispatcher,
     });
 
     return res;
@@ -256,7 +255,8 @@ export class Deluge implements TorrentClient {
     config: Partial<AddTorrentOptions> = {},
   ): Promise<AddTorrentResponse> {
     let path: string;
-    if (isUint8Array(torrent) || !torrent.startsWith('/tmp/')) {
+    const isUploaded = typeof torrent === 'string' && torrent.includes('delugeweb-');
+    if (isUint8Array(torrent) || !isUploaded) {
       const upload = await this.upload(torrent);
       if (!upload.success || !upload.files.length) {
         throw new Error('Failed to upload');
@@ -264,7 +264,10 @@ export class Deluge implements TorrentClient {
 
       path = upload.files[0];
     } else {
-      /** Assume paths starting with /tmp/ are from {@link Deluge.addTorrent} */
+      /**
+       * Assume paths starting with /tmp/ are from {@link Deluge.upload}
+       * Example temp path: /run/deluged-temp/delugeweb-s0jy917j/ubuntu-20.10-desktop-amd64.iso.torrent
+       */
       path = torrent;
     }
 
@@ -670,8 +673,7 @@ export class Deluge implements TorrentClient {
       timeout: this.config.timeout,
       responseType: 'json',
       parseResponse: JSON.parse,
-      // @ts-expect-error for some reason agent is not in the type
-      agent: this.config.agent,
+      dispatcher: this.config.dispatcher,
     });
 
     const err =

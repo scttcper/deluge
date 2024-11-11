@@ -1,6 +1,6 @@
-import { NormalizedTorrent, TorrentState } from '@ctrl/shared-torrent';
+import { type NormalizedTorrent, TorrentState } from '@ctrl/shared-torrent';
 
-import { Torrent } from './types.js';
+import type { Torrent } from './types.js';
 
 export function normalizeTorrentData(id: string, torrent: Torrent): NormalizedTorrent {
   const dateAdded = new Date(torrent.time_added * 1000).toISOString();
