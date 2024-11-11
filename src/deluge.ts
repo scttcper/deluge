@@ -255,8 +255,10 @@ export class Deluge implements TorrentClient {
     config: Partial<AddTorrentOptions> = {},
   ): Promise<AddTorrentResponse> {
     let path: string;
-    if (isUint8Array(torrent) || !torrent.startsWith('/tmp/') || !torrent.includes('delugeweb-')) {
-      console.log({ torrent });
+    const isUploaded =
+      typeof torrent === 'string' &&
+      (torrent.startsWith('/tmp/') || torrent.includes('delugeweb-'));
+    if (isUint8Array(torrent) && !isUploaded) {
       const upload = await this.upload(torrent);
       if (!upload.success || !upload.files.length) {
         throw new Error('Failed to upload');
@@ -265,7 +267,7 @@ export class Deluge implements TorrentClient {
       path = upload.files[0];
     } else {
       /**
-       * Assume paths starting with /tmp/ are from {@link Deluge.addTorrent}
+       * Assume paths starting with /tmp/ are from {@link Deluge.upload}
        * Example temp path: /run/deluged-temp/delugeweb-s0jy917j/ubuntu-20.10-desktop-amd64.iso.torrent
        */
       path = torrent;
