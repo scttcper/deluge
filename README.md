@@ -70,6 +70,15 @@ const res = await client.removeTorrent('torrent_id', true);
 console.log(res);
 ```
 
+##### export and create from state
+
+If you're shutting down the server often (serverless?) you can export the state
+
+```ts
+const state = client.exportState()
+const client = Deluge.createFromState(config, state);
+```
+
 ### See Also
 transmission - https://github.com/scttcper/transmission  
 qbittorrent - https://github.com/scttcper/qbittorrent  
