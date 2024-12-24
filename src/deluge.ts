@@ -39,7 +39,7 @@ import type {
 } from './types.js';
 
 interface DelugeState extends TorrentClientState {
-  auth?: { cookie: Cookie; msgId: number };
+  auth: { cookie?: Cookie; msgId: number };
 }
 
 const defaults: TorrentClientConfig = {
@@ -68,7 +68,7 @@ export class Deluge implements TorrentClient {
   }
 
   config: TorrentClientConfig;
-  state: DelugeState = {};
+  state: DelugeState = { auth: { msgId: 0 } };
 
   constructor(options: Partial<TorrentClientConfig> = {}) {
     this.config = { ...defaults, ...options };
@@ -83,13 +83,13 @@ export class Deluge implements TorrentClient {
               cookie: this.state.auth.cookie.toJSON(),
               msgId: this.state.auth.msgId,
             }
-          : undefined,
+          : { msgId: 0 },
       }),
     );
   }
 
   resetSession(): void {
-    this.state.auth = undefined;
+    this.state.auth = { msgId: 0 };
   }
 
   async getHosts(): Promise<GetHostsResponse> {
@@ -158,7 +158,7 @@ export class Deluge implements TorrentClient {
    */
   async checkSession(): Promise<boolean> {
     // cookie is missing or expires in x seconds
-    if (this.state.auth?.cookie) {
+    if (this.state.auth.cookie) {
       // eslint-disable-next-line new-cap
       if (this.state.auth.cookie.TTL() < 5000) {
         this.resetSession();
@@ -168,7 +168,7 @@ export class Deluge implements TorrentClient {
       return true;
     }
 
-    if (this.state.auth?.cookie) {
+    if (this.state.auth.cookie) {
       try {
         const check = await this.request<BooleanStatus>('auth.check_session', undefined, false);
         const body = await check.json();
@@ -195,10 +195,7 @@ export class Deluge implements TorrentClient {
       throw new Error('Auth failed, incorrect password');
     }
 
-    this.state.auth = {
-      cookie: Cookie.parse(res.headers.get('set-cookie')),
-      msgId: 0,
-    };
+    this.state.auth.cookie = Cookie.parse(res.headers.get('set-cookie'));
     return true;
   }
 
@@ -421,10 +418,7 @@ export class Deluge implements TorrentClient {
 
     // update current password to new password
     this.config.password = password;
-    this.state.auth = {
-      cookie: Cookie.parse(res.headers.get('set-cookie')),
-      msgId: 0,
-    };
+    this.state.auth.cookie = Cookie.parse(res.headers.get('set-cookie'));
     return body;
   }
 
@@ -681,7 +675,7 @@ export class Deluge implements TorrentClient {
     needsAuth = true,
     autoConnect = true,
   ): Promise<ReturnType<typeof ofetch.raw<T>>> {
-    if (this.state.auth?.msgId === 4096) {
+    if (this.state.auth.msgId === 4096) {
       this.state.auth.msgId = 0;
     }
 
@@ -697,21 +691,16 @@ export class Deluge implements TorrentClient {
     }
 
     const headers: any = {
-      Cookie: this.state.auth?.cookie?.cookieString?.(),
+      Cookie: this.state.auth.cookie?.cookieString?.(),
     };
     const url = joinURL(this.config.baseUrl, this.config.path);
-
-    // increment msgId
-    if (this.state.auth?.msgId) {
-      this.state.auth.msgId++;
-    }
 
     const res = await ofetch.raw<T>(url, {
       method: 'POST',
       body: JSON.stringify({
         method,
         params,
-        id: this.state.auth?.msgId,
+        id: this.state.auth.msgId++,
       }),
       headers,
       retry: 0,
