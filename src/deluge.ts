@@ -1,6 +1,7 @@
 import { FormData } from 'node-fetch-native';
 import { ofetch } from 'ofetch';
 import { Cookie } from 'tough-cookie';
+import type { Jsonify } from 'type-fest';
 import { joinURL } from 'ufo';
 import { base64ToUint8Array, isUint8Array, stringToUint8Array } from 'uint8array-extras';
 
@@ -10,7 +11,8 @@ import type {
   AllClientData,
   NormalizedTorrent,
   TorrentClient,
-  TorrentSettings,
+  TorrentClientConfig,
+  TorrentClientState,
 } from '@ctrl/shared-torrent';
 
 import { normalizeTorrentData } from './normalizeTorrentData.js';
@@ -36,7 +38,11 @@ import type {
   UploadResponse,
 } from './types.js';
 
-const defaults: TorrentSettings = {
+interface DelugeState extends TorrentClientState {
+  auth: { cookie?: Cookie; msgId: number };
+}
+
+const defaults: TorrentClientConfig = {
   baseUrl: 'http://localhost:8112/',
   path: '/json',
   password: 'deluge',
@@ -44,19 +50,46 @@ const defaults: TorrentSettings = {
 };
 
 export class Deluge implements TorrentClient {
-  config: TorrentSettings;
+  static createFromState(
+    config: Readonly<TorrentClientConfig>,
+    state: Readonly<Jsonify<DelugeState>>,
+  ) {
+    const deluge = new Deluge(config);
+    deluge.state = {
+      ...state,
+      auth: state.auth
+        ? {
+            cookie: Cookie.fromJSON(state.auth.cookie),
+            msgId: state.auth.msgId,
+          }
+        : undefined,
+    };
+    return deluge;
+  }
 
-  private _msgId = 0;
+  config: TorrentClientConfig;
+  state: DelugeState = { auth: { msgId: 0 } };
 
-  private _cookie?: Cookie;
-
-  constructor(options: Partial<TorrentSettings> = {}) {
+  constructor(options: Partial<TorrentClientConfig> = {}) {
     this.config = { ...defaults, ...options };
   }
 
+  exportState(): Jsonify<DelugeState> {
+    return JSON.parse(
+      JSON.stringify({
+        ...this.state,
+        auth: this.state.auth
+          ? {
+              cookie: this.state.auth.cookie.toJSON(),
+              msgId: this.state.auth.msgId,
+            }
+          : { msgId: 0 },
+      }),
+    );
+  }
+
   resetSession(): void {
-    this._cookie = undefined;
-    this._msgId = 0;
+    this.state.auth = { msgId: 0 };
   }
 
   async getHosts(): Promise<GetHostsResponse> {
@@ -125,9 +158,9 @@ export class Deluge implements TorrentClient {
    */
   async checkSession(): Promise<boolean> {
     // cookie is missing or expires in x seconds
-    if (this._cookie) {
+    if (this.state.auth.cookie) {
       // eslint-disable-next-line new-cap
-      if (this._cookie.TTL() < 5000) {
+      if (this.state.auth.cookie.TTL() < 5000) {
         this.resetSession();
         return false;
       }
@@ -135,7 +168,7 @@ export class Deluge implements TorrentClient {
       return true;
     }
 
-    if (this._cookie) {
+    if (this.state.auth.cookie) {
       try {
         const check = await this.request<BooleanStatus>('auth.check_session', undefined, false);
         const body = await check.json();
@@ -162,7 +195,7 @@ export class Deluge implements TorrentClient {
       throw new Error('Auth failed, incorrect password');
     }
 
-    this._cookie = Cookie.parse(res.headers.get('set-cookie'));
+    this.state.auth.cookie = Cookie.parse(res.headers.get('set-cookie'));
     return true;
   }
 
@@ -385,7 +418,7 @@ export class Deluge implements TorrentClient {
 
     // update current password to new password
     this.config.password = password;
-    this._cookie = Cookie.parse(res.headers.get('set-cookie'));
+    this.state.auth.cookie = Cookie.parse(res.headers.get('set-cookie'));
     return body;
   }
 
@@ -642,8 +675,8 @@ export class Deluge implements TorrentClient {
     needsAuth = true,
     autoConnect = true,
   ): Promise<ReturnType<typeof ofetch.raw<T>>> {
-    if (this._msgId === 4096) {
-      this._msgId = 0;
+    if (this.state.auth.msgId === 4096) {
+      this.state.auth.msgId = 0;
     }
 
     if (needsAuth) {
@@ -658,15 +691,16 @@ export class Deluge implements TorrentClient {
     }
 
     const headers: any = {
-      Cookie: this._cookie?.cookieString?.(),
+      Cookie: this.state.auth.cookie?.cookieString?.(),
     };
     const url = joinURL(this.config.baseUrl, this.config.path);
+
     const res = await ofetch.raw<T>(url, {
       method: 'POST',
       body: JSON.stringify({
         method,
         params,
-        id: this._msgId++,
+        id: this.state.auth.msgId++,
       }),
       headers,
       retry: 0,
