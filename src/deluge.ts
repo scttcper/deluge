@@ -62,7 +62,7 @@ export class Deluge implements TorrentClient {
             cookie: Cookie.fromJSON(state.auth.cookie),
             msgId: state.auth.msgId,
           }
-        : undefined,
+        : { msgId: 0 },
     };
     return deluge;
   }
