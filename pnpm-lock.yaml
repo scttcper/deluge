@@ -37,8 +37,8 @@ importers:
         specifier: 2.1.2
         version: 2.1.2
       '@ctrl/eslint-config-biome':
-        specifier: 5.0.0
-        version: 5.0.0(@typescript-eslint/utils@8.38.0(eslint@9.31.0)(typescript@5.8.3))(eslint@9.31.0)(typescript@5.8.3)
+        specifier: 5.0.1
+        version: 5.0.1(@typescript-eslint/utils@8.38.0(eslint@9.31.0)(typescript@5.8.3))(eslint@9.31.0)(typescript@5.8.3)
       '@sindresorhus/tsconfig':
         specifier: 7.0.0
         version: 7.0.0
@@ -141,8 +141,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@ctrl/eslint-config-biome@5.0.0':
-    resolution: {integrity: sha512-WpG4Ya7PA8B9mrkt99c0ywMTNJhStIRQWdzHb8/5ahycMOBBYi0Nz+A4xS6FAumFyJDkFTbjUFa5LImALlQLOg==}
+  '@ctrl/eslint-config-biome@5.0.1':
+    resolution: {integrity: sha512-XKB6K94UhGP8bwwG7wG+ee+cFeWYMTL9pqHoLpnltXQu784dV71jMN4NEomMb8FQo3t+n7lg5ILzfTD0r02/Ww==}
 
   '@ctrl/magnet-link@4.0.2':
     resolution: {integrity: sha512-wENP7LH4BmCjz+gXVq7Nzz20zMjY/huuG7aDk/yu/LhFdC84e/l8222rCIAo0lwhU451lFcJKLcOmtG6TNrBAQ==}
@@ -1626,7 +1626,7 @@ snapshots:
   '@biomejs/cli-win32-x64@2.1.2':
     optional: true
 
-  '@ctrl/eslint-config-biome@5.0.0(@typescript-eslint/utils@8.38.0(eslint@9.31.0)(typescript@5.8.3))(eslint@9.31.0)(typescript@5.8.3)':
+  '@ctrl/eslint-config-biome@5.0.1(@typescript-eslint/utils@8.38.0(eslint@9.31.0)(typescript@5.8.3))(eslint@9.31.0)(typescript@5.8.3)':
     dependencies:
       '@eslint/js': 9.31.0
       '@typescript-eslint/eslint-plugin': 8.38.0(@typescript-eslint/parser@8.38.0(eslint@9.31.0)(typescript@5.8.3))(eslint@9.31.0)(typescript@5.8.3)
