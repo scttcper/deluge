@@ -6,11 +6,16 @@
   "license": "MIT",
   "repository": "scttcper/deluge",
   "homepage": "https://deluge.vercel.app",
-  "keywords": ["deluge", "typescript"],
+  "keywords": [
+    "deluge",
+    "typescript"
+  ],
   "type": "module",
   "main": "./dist/src/index.js",
   "typings": "./dist/src/index.d.ts",
-  "files": ["dist/src"],
+  "files": [
+    "dist/src"
+  ],
   "sideEffects": false,
   "scripts": {
     "lint": "pnpm run '/^(lint:biome|lint:eslint)$/'",
@@ -42,6 +47,7 @@
     "@sindresorhus/tsconfig": "7.0.0",
     "@types/node": "24.1.0",
     "@vitest/coverage-v8": "3.2.4",
+    "eslint": "9.31.0",
     "p-wait-for": "5.0.2",
     "typedoc": "0.28.7",
     "typescript": "5.8.3",
@@ -52,7 +58,9 @@
     "provenance": true
   },
   "release": {
-    "branches": ["master"]
+    "branches": [
+      "master"
+    ]
   },
   "engines": {
     "node": ">=18"
