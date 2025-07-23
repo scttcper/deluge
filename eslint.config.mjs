@@ -13,4 +13,9 @@ export default [
     ],
   },
   ...config,
+  {
+    rules: {
+      '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'off',
+    },
+  },
 ];

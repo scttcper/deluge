@@ -25,7 +25,7 @@ async function setupTorrent(deluge: Deluge): Promise<TorrentListResponse> {
     { timeout: 10000 },
   );
   const res = await deluge.listTorrents();
-  // biome-ignore lint/suspicious/noMisplacedAssertion: <explanation>
+  // biome-ignore lint/suspicious/noMisplacedAssertion: its fine
   expect(Object.keys(res.result.torrents)).toHaveLength(1);
   return res;
 }

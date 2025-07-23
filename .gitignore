@@ -36,3 +36,5 @@ build
 docs
 dist
 yarn.lock
+.DS_Store
+
