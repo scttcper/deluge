@@ -237,7 +237,7 @@ export class Deluge implements TorrentClient {
     return req._data;
   }
 
-  async upload(torrent: string | Uint8Array): Promise<UploadResponse> {
+  async upload(torrent: string | Uint8Array<ArrayBuffer>): Promise<UploadResponse> {
     await this._validateAuth();
     const isConnected = await this.connected();
     if (!isConnected) {
@@ -284,7 +284,7 @@ export class Deluge implements TorrentClient {
   }
 
   async addTorrent(
-    torrent: string | Uint8Array,
+    torrent: string | Uint8Array<ArrayBuffer>,
     config: Partial<AddTorrentOptions> = {},
   ): Promise<AddTorrentResponse> {
     let path: string;
@@ -334,7 +334,7 @@ export class Deluge implements TorrentClient {
   }
 
   async normalizedAddTorrent(
-    torrent: string | Uint8Array,
+    torrent: string | Uint8Array<ArrayBuffer>,
     options: Partial<NormalizedAddTorrentOptions> = {},
   ): Promise<NormalizedTorrent> {
     const torrentOptions: Partial<AddTorrentOptions> = {};
