@@ -159,7 +159,6 @@ export class Deluge implements TorrentClient {
   async checkSession(): Promise<boolean> {
     // cookie is missing or expires in x seconds
     if (this.state.auth.cookie) {
-      // eslint-disable-next-line new-cap
       if (this.state.auth.cookie.TTL() < 5000) {
         this.resetSession();
         return false;
