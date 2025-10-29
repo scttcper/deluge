@@ -1,6 +1,6 @@
 {
   "name": "@ctrl/deluge",
-  "version": "7.4.0",
+  "version": "7.5.0",
   "description": "TypeScript api wrapper for deluge using ofetch",
   "author": "Scott Cooper <scttcper@gmail.com>",
   "license": "MIT",
