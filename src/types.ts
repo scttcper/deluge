@@ -20,7 +20,7 @@ export interface ListMethods extends DefaultResponse {
 }
 
 export interface AddTorrentResponse extends DefaultResponse {
-  result: [boolean, string][];
+  result: Array<[boolean, string]>;
 }
 
 // {"files": ["/tmp/delugeweb-5Q9ttR/tmpL7xhth.torrent"], "success": true}
@@ -42,7 +42,7 @@ export interface GetHostsResponse extends DefaultResponse {
    * port - 58846
    * status - "Online"
    */
-  result: [string, string, number, string][];
+  result: Array<[string, string, number, string]>;
 }
 
 export type HostStatus = 'Online' | 'Offline' | 'Connected';
@@ -116,9 +116,9 @@ export interface TorrentList {
  * ['label', 'id']
  */
 export interface TorrentFilters {
-  state: [string, number][];
-  tracker_host: [string, number][];
-  label?: [string, number][];
+  state: Array<[string, number]>;
+  tracker_host: Array<[string, number]>;
+  label?: Array<[string, number]>;
 }
 
 export interface Stats {

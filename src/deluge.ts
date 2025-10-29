@@ -290,7 +290,7 @@ export class Deluge implements TorrentClient {
     const isUploaded = typeof torrent === 'string' && torrent.includes('delugeweb-');
     if (isUint8Array(torrent) || !isUploaded) {
       const upload = await this.upload(torrent);
-      if (!upload.success || !upload.files.length) {
+      if (!upload.success || upload.files.length === 0) {
         throw new Error('Failed to upload');
       }
 
@@ -544,7 +544,7 @@ export class Deluge implements TorrentClient {
     ];
     const req = await this.request<TorrentStatus>('web.get_torrent_status', [torrentId, fields]);
     const body: TorrentStatus = req._data;
-    if (!body.result || !Object.keys(body.result).length) {
+    if (!body.result || Object.keys(body.result).length === 0) {
       throw new Error('Torrent not found');
     }
 

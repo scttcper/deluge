@@ -22,7 +22,7 @@ async function setupTorrent(deluge: Deluge): Promise<TorrentListResponse> {
       const r = await deluge.listTorrents();
       return Object.keys(r.result.torrents).length === 1;
     },
-    { timeout: 10000 },
+    { timeout: 10_000 },
   );
   const res = await deluge.listTorrents();
   // biome-ignore lint/suspicious/noMisplacedAssertion: its fine
@@ -266,7 +266,7 @@ it('should return normalized torrent data', async () => {
   expect(torrent.totalDownloaded).toBe(0);
   expect(torrent.totalPeers).toBe(-1);
   expect(torrent.totalSeeds).toBe(-1);
-  expect(torrent.totalSelected).toBe(1953349632);
+  expect(torrent.totalSelected).toBe(1_953_349_632);
   // expect(torrent.totalSize).toBe(undefined);
   expect(torrent.totalUploaded).toBe(0);
   expect(torrent.uploadSpeed).toBe(0);
@@ -301,11 +301,11 @@ it('should add torrent with normalized response', async () => {
   expect(torrent.totalDownloaded).toBeGreaterThanOrEqual(0);
   expect(torrent.totalPeers).toBe(-1);
   expect(torrent.totalSeeds).toBe(-1);
-  expect(torrent.totalSelected).toBe(1953349632);
+  expect(torrent.totalSelected).toBe(1_953_349_632);
   // expect(torrent.totalSize).toBe(undefined);
   expect(torrent.totalUploaded).toBeGreaterThanOrEqual(0);
   expect(torrent.uploadSpeed).toBeGreaterThanOrEqual(0);
-}, 15000);
+}, 15_000);
 it('should download from url', async () => {
   const client = new Deluge({ baseUrl });
   const result = await client.downloadFromUrl(
@@ -319,8 +319,8 @@ it('should download from url', async () => {
       const r = await client.listTorrents();
       return Object.keys(r.result.torrents).length === 1;
     },
-    { timeout: 10000 },
+    { timeout: 10_000 },
   );
   const res = await client.listTorrents();
   expect(Object.keys(res.result.torrents)).toHaveLength(1);
-}, 15000);
+}, 15_000);
