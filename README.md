@@ -26,7 +26,7 @@ async function main() {
 
 ### API
 
-Docs: https://deluge.vercel.app
+Docs: https://deluge.ep.workers.dev
 
 ### Normalized API
 

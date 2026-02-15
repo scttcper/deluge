@@ -5,7 +5,7 @@
   "author": "Scott Cooper <scttcper@gmail.com>",
   "license": "MIT",
   "repository": "scttcper/deluge",
-  "homepage": "https://deluge.vercel.app",
+  "homepage": "https://deluge.ep.workers.dev",
   "keywords": [
     "deluge",
     "typescript"
