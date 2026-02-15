@@ -1,11 +1,11 @@
 {
   "name": "@ctrl/deluge",
-  "version": "7.5.0",
+  "version": "0.0.0-placeholder",
   "description": "TypeScript api wrapper for deluge using ofetch",
   "author": "Scott Cooper <scttcper@gmail.com>",
   "license": "MIT",
   "repository": "scttcper/deluge",
-  "homepage": "https://deluge.vercel.app",
+  "homepage": "https://deluge.ep.workers.dev",
   "keywords": [
     "deluge",
     "typescript"
@@ -18,37 +18,35 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "lint": "oxlint . && prettier --check . --experimental-cli",
-    "lint:fix": "oxlint . --fix && prettier --write . --log-level=error --experimental-cli",
+    "lint": "oxfmt --check && oxlint .",
+    "lint:fix": "oxfmt && oxlint . --fix",
     "prepare": "npm run build",
     "build": "tsc",
     "build:docs": "typedoc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ci": "vitest run --coverage --reporter=default --reporter=junit --outputFile=./junit.xml"
+    "test:ci": "vitest run --reporter=default --reporter=junit --outputFile=./junit.xml"
   },
   "dependencies": {
     "@ctrl/magnet-link": "^4.2.0",
     "@ctrl/shared-torrent": "^6.5.0",
     "node-fetch-native": "^1.6.7",
-    "ofetch": "^1.5.0",
+    "ofetch": "^1.5.1",
     "tough-cookie": "^6.0.0",
-    "type-fest": "^5.1.0",
-    "ufo": "^1.6.1",
+    "type-fest": "^5.4.4",
+    "ufo": "^1.6.3",
     "uint8array-extras": "^1.5.0"
   },
   "devDependencies": {
-    "@ctrl/oxlint-config": "1.3.2",
-    "@sindresorhus/tsconfig": "8.0.1",
-    "@trivago/prettier-plugin-sort-imports": "5.2.2",
-    "@types/node": "24.9.2",
-    "@vitest/coverage-v8": "4.0.5",
-    "oxlint": "1.24.0",
+    "@ctrl/oxlint-config": "1.4.0",
+    "@sindresorhus/tsconfig": "8.1.0",
+    "@types/node": "25.2.3",
+    "oxfmt": "0.32.0",
+    "oxlint": "1.47.0",
     "p-wait-for": "6.0.0",
-    "prettier": "3.6.2",
-    "typedoc": "0.28.14",
+    "typedoc": "0.28.17",
     "typescript": "5.9.3",
-    "vitest": "4.0.5"
+    "vitest": "4.0.18"
   },
   "publishConfig": {
     "access": "public",
@@ -62,7 +60,7 @@
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "pnpm@10.20.0",
+  "packageManager": "pnpm@10.29.3",
   "prettier": {
     "singleQuote": true,
     "trailingComma": "all",

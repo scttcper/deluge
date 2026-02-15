@@ -1,4 +1,4 @@
-# deluge [![npm](https://img.shields.io/npm/v/@ctrl/deluge.svg?maxAge=3600)](https://www.npmjs.com/package/@ctrl/deluge) [![coverage status](https://codecov.io/gh/scttcper/deluge/branch/master/graph/badge.svg)](https://codecov.io/gh/scttcper/deluge)
+# deluge [![npm](https://img.shields.io/npm/v/@ctrl/deluge.svg?maxAge=3600)](https://www.npmjs.com/package/@ctrl/deluge)
 
 > TypeScript api wrapper for [deluge](https://deluge-torrent.org/) using [ofetch](https://github.com/unjs/ofetch)
 
@@ -26,7 +26,7 @@ async function main() {
 
 ### API
 
-Docs: https://deluge.vercel.app
+Docs: https://deluge.ep.workers.dev
 
 ### Normalized API
 
