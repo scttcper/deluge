@@ -726,7 +726,9 @@ export class Deluge implements TorrentClient {
   private _setAuthCookie(setCookie: string | null): void {
     const authSetCookie = setCookie ? splitSetCookieString(setCookie)[0] : undefined;
     const parsed = authSetCookie ? parseSetCookie(authSetCookie) : undefined;
-    const expiresValue = authSetCookie ? /(?:^|;)\s*expires=([^;]+)/i.exec(authSetCookie)?.[1] : undefined;
+    const expiresValue = authSetCookie
+      ? /(?:^|;)\s*expires=([^;]+)/i.exec(authSetCookie)?.[1]
+      : undefined;
     const expires = expiresValue ? new Date(expiresValue) : undefined;
 
     this.state.auth.cookieHeader =
