@@ -7,9 +7,9 @@ import type {
   TorrentClientConfig,
   TorrentClientState,
 } from '@ctrl/shared-torrent';
+import { parseSetCookie, splitSetCookieString, stringifyCookie } from 'cookie-es';
 import { FormData } from 'node-fetch-native';
 import { ofetch } from 'ofetch';
-import { Cookie } from 'tough-cookie';
 import type { Jsonify } from 'type-fest';
 import { joinURL } from 'ufo';
 import { base64ToUint8Array, isUint8Array, stringToUint8Array } from 'uint8array-extras';
@@ -38,7 +38,7 @@ import type {
 } from './types.js';
 
 interface DelugeState extends TorrentClientState {
-  auth: { cookie?: Cookie; msgId: number };
+  auth: { cookieHeader?: string; expires?: string; msgId: number };
 }
 
 const defaults: TorrentClientConfig = {
@@ -58,7 +58,8 @@ export class Deluge implements TorrentClient {
       ...state,
       auth: state.auth
         ? {
-            cookie: Cookie.fromJSON(state.auth.cookie),
+            cookieHeader: state.auth.cookieHeader,
+            expires: state.auth.expires ? new Date(state.auth.expires).toISOString() : undefined,
             msgId: state.auth.msgId,
           }
         : { msgId: 0 },
@@ -77,12 +78,7 @@ export class Deluge implements TorrentClient {
     return JSON.parse(
       JSON.stringify({
         ...this.state,
-        auth: this.state.auth
-          ? {
-              cookie: this.state.auth.cookie.toJSON(),
-              msgId: this.state.auth.msgId,
-            }
-          : { msgId: 0 },
+        auth: this.state.auth,
       }),
     );
   }
@@ -157,25 +153,25 @@ export class Deluge implements TorrentClient {
    */
   async checkSession(): Promise<boolean> {
     // cookie is missing or expires in x seconds
-    if (this.state.auth.cookie) {
-      if (this.state.auth.cookie.TTL() < 5000) {
-        this.resetSession();
-        return false;
-      }
-
-      return true;
+    if (!this.state.auth.cookieHeader) {
+      this.resetSession();
+      return false;
     }
 
-    if (this.state.auth.cookie) {
-      try {
-        const check = await this.request<BooleanStatus>('auth.check_session', undefined, false);
-        const body = await check.json();
-        if (body?.result) {
-          return true;
-        }
-      } catch {
-        // do nothing
+    const expires = this.state.auth.expires ? new Date(this.state.auth.expires) : undefined;
+    if (expires && expires.getTime() - Date.now() < 5000) {
+      this.resetSession();
+      return false;
+    }
+
+    try {
+      const check = await this.request<BooleanStatus>('auth.check_session', undefined, false);
+      const body = check._data;
+      if (body?.result) {
+        return true;
       }
+    } catch {
+      // do nothing
     }
 
     this.resetSession();
@@ -193,7 +189,7 @@ export class Deluge implements TorrentClient {
       throw new Error('Auth failed, incorrect password');
     }
 
-    this.state.auth.cookie = Cookie.parse(res.headers.get('set-cookie'));
+    this._setAuthCookie(res.headers.get('set-cookie'));
     return true;
   }
 
@@ -416,7 +412,7 @@ export class Deluge implements TorrentClient {
 
     // update current password to new password
     this.config.password = password;
-    this.state.auth.cookie = Cookie.parse(res.headers.get('set-cookie'));
+    this._setAuthCookie(res.headers.get('set-cookie'));
     return body;
   }
 
@@ -689,7 +685,7 @@ export class Deluge implements TorrentClient {
     }
 
     const headers: any = {
-      Cookie: this.state.auth.cookie?.cookieString?.(),
+      Cookie: this.state.auth.cookieHeader,
     };
     const url = joinURL(this.config.baseUrl, this.config.path);
 
@@ -725,5 +721,21 @@ export class Deluge implements TorrentClient {
     if (!validAuth) {
       throw new Error('Invalid Auth');
     }
+  }
+
+  private _setAuthCookie(setCookie: string | null): void {
+    const authSetCookie = setCookie ? splitSetCookieString(setCookie)[0] : undefined;
+    const parsed = authSetCookie ? parseSetCookie(authSetCookie) : undefined;
+    const expiresValue = authSetCookie
+      ? /(?:^|;)\s*expires=([^;]+)/i.exec(authSetCookie)?.[1]
+      : undefined;
+    const expires = expiresValue ? new Date(expiresValue) : undefined;
+
+    this.state.auth.cookieHeader =
+      parsed?.name && parsed.value !== undefined
+        ? stringifyCookie({ [parsed.name]: parsed.value })
+        : undefined;
+    this.state.auth.expires =
+      expires && !Number.isNaN(expires.getTime()) ? expires.toISOString() : undefined;
   }
 }
