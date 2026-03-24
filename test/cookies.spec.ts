@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 
 import { Deluge } from '../src/index.js';
 
@@ -32,4 +32,21 @@ it('should preserve auth cookie state across export and restore', () => {
 
   const restored = Deluge.createFromState(deluge.config, deluge.exportState());
   expect(restored.state.auth).toEqual(deluge.state.auth);
+});
+
+it('should validate an existing cookie with auth.check_session', async () => {
+  const deluge = new Deluge({ baseUrl });
+  deluge.state.auth = {
+    cookieHeader: 'session_id=abc123',
+    expires: '2027-06-09T10:18:14.000Z',
+    msgId: 7,
+  };
+
+  const request = vi.spyOn(deluge, 'request').mockResolvedValue({
+    _data: { result: false },
+  } as Awaited<ReturnType<Deluge['request']>>);
+
+  await expect(deluge.checkSession()).resolves.toBe(false);
+  expect(request).toHaveBeenCalledWith('auth.check_session', undefined, false);
+  expect(deluge.state.auth).toEqual({ msgId: 0 });
 });

@@ -153,26 +153,25 @@ export class Deluge implements TorrentClient {
    */
   async checkSession(): Promise<boolean> {
     // cookie is missing or expires in x seconds
-    if (this.state.auth.cookieHeader) {
-      const expires = this.state.auth.expires ? new Date(this.state.auth.expires) : undefined;
-      if (expires && expires.getTime() - Date.now() < 5000) {
-        this.resetSession();
-        return false;
-      }
-
-      return true;
+    if (!this.state.auth.cookieHeader) {
+      this.resetSession();
+      return false;
     }
 
-    if (this.state.auth.cookieHeader) {
-      try {
-        const check = await this.request<BooleanStatus>('auth.check_session', undefined, false);
-        const body = await check.json();
-        if (body?.result) {
-          return true;
-        }
-      } catch {
-        // do nothing
+    const expires = this.state.auth.expires ? new Date(this.state.auth.expires) : undefined;
+    if (expires && expires.getTime() - Date.now() < 5000) {
+      this.resetSession();
+      return false;
+    }
+
+    try {
+      const check = await this.request<BooleanStatus>('auth.check_session', undefined, false);
+      const body = check._data;
+      if (body?.result) {
+        return true;
       }
+    } catch {
+      // do nothing
     }
 
     this.resetSession();
@@ -725,34 +724,16 @@ export class Deluge implements TorrentClient {
   }
 
   private _setAuthCookie(setCookie: string | null): void {
-    const authCookie = this._authCookie(setCookie ?? '');
-    this.state.auth.cookieHeader = authCookie?.header;
-    this.state.auth.expires = authCookie?.expires
-      ? new Date(authCookie.expires).toISOString()
-      : undefined;
-  }
-
-  private _authCookie(setCookie: string): { expires?: Date; header: string } | undefined {
-    if (!setCookie) {
-      return undefined;
-    }
-
-    const authSetCookie = splitSetCookieString(setCookie)[0];
-    if (!authSetCookie) {
-      return undefined;
-    }
-
-    const parsed = parseSetCookie(authSetCookie);
-    if (!parsed?.name || parsed.value === undefined) {
-      return undefined;
-    }
-
-    const expiresValue = /(?:^|;)\s*expires=([^;]+)/i.exec(authSetCookie)?.[1];
+    const authSetCookie = setCookie ? splitSetCookieString(setCookie)[0] : undefined;
+    const parsed = authSetCookie ? parseSetCookie(authSetCookie) : undefined;
+    const expiresValue = authSetCookie ? /(?:^|;)\s*expires=([^;]+)/i.exec(authSetCookie)?.[1] : undefined;
     const expires = expiresValue ? new Date(expiresValue) : undefined;
 
-    return {
-      expires: expires && !Number.isNaN(expires.getTime()) ? expires : undefined,
-      header: stringifyCookie({ [parsed.name]: parsed.value }),
-    };
+    this.state.auth.cookieHeader =
+      parsed?.name && parsed.value !== undefined
+        ? stringifyCookie({ [parsed.name]: parsed.value })
+        : undefined;
+    this.state.auth.expires =
+      expires && !Number.isNaN(expires.getTime()) ? expires.toISOString() : undefined;
   }
 }
