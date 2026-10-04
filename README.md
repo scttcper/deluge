@@ -30,7 +30,7 @@ Docs: https://deluge.ep.workers.dev
 
 ### Normalized API
 
-These functions are normalized through [@ctrl/shared-torrent](https://github.com/scttcper/shared-torrent), which makes it easier to support multiple torrent clients. See below for alternative supported torrent clients.
+These functions are normalized through [@ctrl/shared-torrent](https://github.com/scttcper/shared-torrent), which makes it easier to support multiple torrent clients. See [below](#see-also) for alternative supported torrent clients.
 
 ##### getAllData
 
@@ -43,10 +43,10 @@ console.log(data.torrents);
 
 ##### getTorrent
 
-Returns one torrent data
+Returns one torrent data from torrent hash
 
 ```ts
-const data = await client.getTorrent();
+const data = await client.getTorrent('torrent-hash');
 console.log(data);
 ```
 
@@ -55,9 +55,9 @@ console.log(data);
 Pause or resume a torrent
 
 ```ts
-const paused = await client.pauseTorrent();
+const paused = await client.pauseTorrent('torrent-hash');
 console.log(paused);
-const resumed = await client.resumeTorrent();
+const resumed = await client.resumeTorrent('torrent-hash');
 console.log(resumed);
 ```
 
@@ -67,12 +67,44 @@ Remove a torrent. Does not remove data on disk by default.
 
 ```ts
 // does not remove data on disk
-const result = await client.removeTorrent('torrent_id', false);
+const result = await client.removeTorrent('torrent-hash', false);
 console.log(result);
 
 // remove data on disk
-const res = await client.removeTorrent('torrent_id', true);
+const res = await client.removeTorrent('torrent-hash', true);
 console.log(res);
+```
+
+##### queueUp and queueDown
+
+Move a torrent up or down the queue
+
+```ts
+await client.queueUp('torrent-hash');
+await client.queueDown('torrent-hash');
+```
+
+##### addTorrent
+
+Add a torrent from a magnet link or torrent file, has client specific options. Also see normalizedAddTorrent
+
+```ts
+import { readFileSync } from 'node:fs';
+
+const result = await client.addTorrent(new Uint8Array(readFileSync('./linux.torrent')));
+console.log(result);
+```
+
+##### normalizedAddTorrent
+
+Add a torrent and return normalized torrent data, can start a torrent paused and add label
+
+```ts
+const result = await client.normalizedAddTorrent('magnet:?xt=urn:btih:...', {
+  startPaused: false,
+  label: 'linux',
+});
+console.log(result);
 ```
 
 ##### export and create from state
@@ -81,16 +113,24 @@ If you're shutting down the server often (serverless?) you can export the state
 
 ```ts
 const state = client.exportState();
-const client = Deluge.createFromState(config, state);
+const restored = Deluge.createFromState(config, state);
 ```
 
 ### See Also
+
+All of the following npm modules provide the same normalized functions along with supporting the unique apis for each client.
 
 - shared types - [@ctrl/shared-torrent](https://github.com/scttcper/shared-torrent)
 - transmission - [@ctrl/transmission](https://github.com/scttcper/transmission)
 - qbittorrent - [@ctrl/qbittorrent](https://github.com/scttcper/qbittorrent)
 - utorrent - [@ctrl/utorrent](https://github.com/scttcper/utorrent)
 - rtorrent - [@ctrl/rtorrent](https://github.com/scttcper/rtorrent)
+
+Usenet clients with the same normalized approach:
+
+- usenet shared types - [@ctrl/shared-usenet](https://github.com/scttcper/shared-usenet)
+- nzbget - [@ctrl/nzbget](https://github.com/scttcper/nzbget)
+- sabnzbd - [@ctrl/sabnzbd](https://github.com/scttcper/sabnzbd)
 
 ### Start a test docker container
 
