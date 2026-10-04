@@ -86,10 +86,10 @@ const client = Deluge.createFromState(config, state);
 
 ### See Also
 
-- shared types - [@ctrl/shared-torrent](https://github.com/scttcper/shared-torrent)  
-- transmission - [@ctrl/transmission](https://github.com/scttcper/transmission)  
-- qbittorrent - [@ctrl/qbittorrent](https://github.com/scttcper/qbittorrent)  
-- utorrent - [@ctrl/utorrent](https://github.com/scttcper/utorrent)  
+- shared types - [@ctrl/shared-torrent](https://github.com/scttcper/shared-torrent)
+- transmission - [@ctrl/transmission](https://github.com/scttcper/transmission)
+- qbittorrent - [@ctrl/qbittorrent](https://github.com/scttcper/qbittorrent)
+- utorrent - [@ctrl/utorrent](https://github.com/scttcper/utorrent)
 - rtorrent - [@ctrl/rtorrent](https://github.com/scttcper/rtorrent)
 
 ### Start a test docker container
