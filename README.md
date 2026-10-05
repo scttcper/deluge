@@ -8,7 +8,7 @@
 npm install @ctrl/deluge
 ```
 
-Requires Node.js 22 or newer.
+Requires Node.js 24 or newer.
 
 ### Use
 
