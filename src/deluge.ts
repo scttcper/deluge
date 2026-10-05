@@ -1,15 +1,17 @@
 import { magnetDecode } from '@ctrl/magnet-link';
-import type {
-  AddTorrentOptions as NormalizedAddTorrentOptions,
-  AllClientData,
-  NormalizedTorrent,
-  TorrentClient,
-  TorrentClientConfig,
-  TorrentClientState,
+import {
+  type AddTorrentOptions as NormalizedAddTorrentOptions,
+  type AllClientData,
+  type NormalizedTorrent,
+  type TorrentClient,
+  type TorrentClientConfig,
+  TorrentClientError,
+  type TorrentClientErrorCode,
+  type TorrentClientState,
 } from '@ctrl/shared-torrent';
 import { parseSetCookie, splitSetCookieString, stringifyCookie } from 'cookie-es';
 import { FormData } from 'node-fetch-native';
-import { ofetch } from 'ofetch';
+import { FetchError, ofetch } from 'ofetch';
 import type { Jsonify } from 'type-fest';
 import { joinURL } from 'ufo';
 import { base64ToUint8Array, isUint8Array, stringToUint8Array } from 'uint8array-extras';
@@ -122,7 +124,7 @@ export class Deluge implements TorrentClient {
     }
 
     if (!host) {
-      throw new Error('No hosts found');
+      throw new TorrentClientError('No hosts found', 'client_error');
     }
 
     const res = await this.request<ListMethods>('web.connect', [host], true, false);
@@ -189,7 +191,7 @@ export class Deluge implements TorrentClient {
     this.resetSession();
     const res = await this.request<BooleanStatus>('auth.login', [this.config.password], false);
     if (!res.ok || !res.headers?.get('set-cookie')?.length) {
-      throw new Error('Auth failed, incorrect password');
+      throw new TorrentClientError('Auth failed, incorrect password', 'unauthorized');
     }
 
     this._setAuthCookie(res.headers.get('set-cookie'));
@@ -274,7 +276,7 @@ export class Deluge implements TorrentClient {
     const body = res._data;
 
     if (!body.result) {
-      throw new Error('Failed to download torrent');
+      throw new TorrentClientError('Failed to download torrent', 'client_error');
     }
 
     return body.result;
@@ -292,7 +294,7 @@ export class Deluge implements TorrentClient {
     if (isUint8Array(torrent) || !isUploaded) {
       const upload = await this.upload(torrent);
       if (!upload.success || upload.files.length === 0) {
-        throw new Error('Failed to upload');
+        throw new TorrentClientError('Failed to upload', 'client_error');
       }
 
       path = upload.files[0];
@@ -310,7 +312,7 @@ export class Deluge implements TorrentClient {
     const body = res._data;
 
     if (!body.result) {
-      throw new Error('Failed to add torrent');
+      throw new TorrentClientError('Failed to add torrent', 'client_error');
     }
 
     return body;
@@ -379,7 +381,12 @@ export class Deluge implements TorrentClient {
 
     const res = await this.removeTorrents(torrentId, removeData);
     if (res.result.length > 0) {
-      throw new Error(res.result.map(([, message]) => message).join(', '));
+      throw new TorrentClientError(
+        res.result.map(([, message]) => message).join(', '),
+        res.result.every(([, message]) => message.endsWith('not in session.'))
+          ? 'torrent_not_found'
+          : 'client_error',
+      );
     }
   }
 
@@ -401,7 +408,7 @@ export class Deluge implements TorrentClient {
     ]);
     const body = res._data;
     if (!body.result || !res.headers.get('set-cookie')?.length) {
-      throw new Error('Old password incorrect');
+      throw new TorrentClientError('Old password incorrect', 'unauthorized');
     }
 
     // update current password to new password
@@ -546,7 +553,7 @@ export class Deluge implements TorrentClient {
     const req = await this.request<TorrentStatus>('web.get_torrent_status', [torrentId, fields]);
     const body: TorrentStatus = req._data;
     if (!body.result || Object.keys(body.result).length === 0) {
-      throw new Error('Torrent not found');
+      throw new TorrentClientError('Torrent not found', 'torrent_not_found');
     }
 
     return body;
@@ -780,25 +787,37 @@ export class Deluge implements TorrentClient {
     };
     const url = joinURL(this.config.baseUrl, this.config.path);
 
-    const res = await ofetch.raw<T>(url, {
-      method: 'POST',
-      body: JSON.stringify({
-        method,
-        params,
-        id: this.state.auth.msgId++,
-      }),
-      headers,
-      retry: 0,
-      timeout: this.config.timeout,
-      responseType: 'json',
-      parseResponse: JSON.parse,
-      dispatcher: this.config.dispatcher,
-    });
+    const res = await ofetch
+      .raw<T>(url, {
+        method: 'POST',
+        body: JSON.stringify({
+          method,
+          params,
+          id: this.state.auth.msgId++,
+        }),
+        headers,
+        retry: 0,
+        timeout: this.config.timeout,
+        responseType: 'json',
+        parseResponse: JSON.parse,
+        dispatcher: this.config.dispatcher,
+      })
+      .catch((error: unknown) => {
+        if (error instanceof FetchError) {
+          throw new TorrentClientError(
+            error.message,
+            error.status === 401 || error.status === 403 ? 'unauthorized' : 'request_failed',
+            { status: error.status, cause: error },
+          );
+        }
+
+        throw new TorrentClientError((error as Error).message, 'request_failed', { cause: error });
+      });
 
     // deluge returns json-rpc errors with a 200, res.body is the unread stream so check the parsed data
-    const { error } = res._data as { error?: { message: string } | null };
+    const { error } = res._data as { error?: { message: string; code: number } | null };
     if (error) {
-      throw new Error(error.message);
+      throw new TorrentClientError(error.message, delugeErrorCode(error), { cause: error });
     }
 
     return res;
@@ -809,7 +828,7 @@ export class Deluge implements TorrentClient {
     validAuth ||= await this.login();
 
     if (!validAuth) {
-      throw new Error('Invalid Auth');
+      throw new TorrentClientError('Invalid Auth', 'unauthorized');
     }
   }
 
@@ -842,4 +861,16 @@ function legacyTorrentOptions<T extends Partial<TorrentOptions>>(options: T): T 
     ...(is_auto_managed === undefined ? {} : { auto_managed: is_auto_managed }),
     ...rest,
   } as T;
+}
+
+/**
+ * Deluge's web api uses code 1 when the session isn't authenticated
+ * {@link https://github.com/deluge-torrent/deluge/blob/develop/deluge/ui/web/json_api.py}
+ */
+function delugeErrorCode(error: { message: string; code: number }): TorrentClientErrorCode {
+  if (error.code === 1) {
+    return 'unauthorized';
+  }
+
+  return error.message.includes('InvalidTorrentError') ? 'torrent_not_found' : 'client_error';
 }

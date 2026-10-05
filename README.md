@@ -112,6 +112,22 @@ const result = await client.normalizedAddTorrent('magnet:?xt=urn:btih:...', {
 console.log(result);
 ```
 
+##### Errors
+
+Failed requests throw a `TorrentClientError` from [@ctrl/shared-torrent](https://github.com/scttcper/shared-torrent) with a `code` of `torrent_not_found`, `unauthorized`, `request_failed` or `client_error`, the http `status` when there is one and the original error as the `cause`.
+
+```ts
+import { TorrentClientError } from '@ctrl/deluge';
+
+try {
+  await client.getTorrent('torrent-hash');
+} catch (error) {
+  if (error instanceof TorrentClientError && error.code === 'torrent_not_found') {
+    // not in the client
+  }
+}
+```
+
 ##### export and create from state
 
 If you're shutting down the server often (serverless?) you can export the state
