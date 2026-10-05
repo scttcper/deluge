@@ -8,6 +8,8 @@
 npm install @ctrl/deluge
 ```
 
+Requires Node.js 22 or newer.
+
 ### Use
 
 ```ts
@@ -26,7 +28,14 @@ async function main() {
 
 ### API
 
-Docs: https://deluge.ep.workers.dev
+Docs: https://deluge.ep.workers.dev  
+Deluge API Docs: https://deluge.readthedocs.io/en/latest/reference/api.html
+
+Things that work differently from the other clients:
+
+- supports Deluge 2.x
+- `label` needs Deluge's Label plugin, enable it with `client.enablePlugin('Label')`. Setting a label fails without it
+- a label set by `normalizedAddTorrent` can take a few seconds to show up in results
 
 ### Normalized API
 
