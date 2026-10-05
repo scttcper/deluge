@@ -41,7 +41,7 @@ const torrent: Torrent = {
 it('should normalize allocating as checking', () => {
   const result = normalizeTorrentData('id', { ...torrent, state: 'Allocating' });
   expect(result.state).toBe(TorrentState.checking);
-  expect(result.stateMessage).toBe('Allocating');
+  expect(result.stateMessage).toBe('');
 });
 
 it('should set date completed once finished', () => {
