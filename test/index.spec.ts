@@ -6,7 +6,7 @@ import pWaitFor from 'p-wait-for';
 import { uint8ArrayToBase64 } from 'uint8array-extras';
 import { afterEach, beforeAll, expect, it } from 'vitest';
 
-import { Deluge } from '../src/index.js';
+import { Deluge, TorrentClientError } from '../src/index.js';
 import type { TorrentListResponse } from '../src/types.js';
 
 const baseUrl = 'http://localhost:8112';
@@ -256,11 +256,34 @@ it('should remove torrent', async () => {
   await deluge.removeTorrent([key], false);
   expect(Object.keys((await deluge.listTorrents()).result.torrents)).toHaveLength(0);
 });
-it('should throw when removing a torrent that does not exist', async () => {
+it('should throw torrent_not_found for a torrent that does not exist', async () => {
   const deluge = new Deluge({ baseUrl });
   await setupTorrent(deluge);
-  await expect(deluge.removeTorrent('0'.repeat(40))).rejects.toThrow('not in session');
-  await expect(deluge.removeTorrent(['0'.repeat(40)])).rejects.toThrow('not in session');
+  const missing = '0'.repeat(40);
+  const notFound = { name: 'TorrentClientError', code: 'torrent_not_found' };
+  await expect(deluge.getTorrent(missing)).rejects.toMatchObject(notFound);
+  await expect(deluge.pauseTorrent(missing)).rejects.toMatchObject(notFound);
+  await expect(deluge.resumeTorrent(missing)).rejects.toMatchObject(notFound);
+  await expect(deluge.queueUp(missing)).rejects.toMatchObject(notFound);
+  await expect(deluge.queueDown(missing)).rejects.toMatchObject(notFound);
+  await expect(deluge.removeTorrent(missing)).rejects.toMatchObject(notFound);
+  await expect(deluge.removeTorrent([missing])).rejects.toMatchObject(notFound);
+});
+it('should throw client_error for deluge json-rpc errors', async () => {
+  const deluge = new Deluge({ baseUrl });
+  await expect(deluge.request('core.not_a_method')).rejects.toMatchObject({
+    code: 'client_error',
+  });
+});
+it('should throw unauthorized for a wrong password', async () => {
+  const deluge = new Deluge({ baseUrl, password: 'wrong' });
+  await expect(deluge.getAllData()).rejects.toMatchObject({ code: 'unauthorized' });
+});
+it('should throw request_failed without a status when deluge is unreachable', async () => {
+  const deluge = new Deluge({ baseUrl: 'http://127.0.0.1:1' });
+  const error = await deluge.getAllData().catch((error_: unknown) => error_);
+  expect(error).toBeInstanceOf(TorrentClientError);
+  expect(error).toMatchObject({ code: 'request_failed', status: undefined });
 });
 it('should set torrent options', async () => {
   const deluge = new Deluge({ baseUrl });
