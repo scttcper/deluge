@@ -94,10 +94,6 @@ export interface TorrentInfo extends DefaultResponse {
 export interface AddTorrentOptions extends TorrentOptions {
   add_paused: boolean;
   /**
-   * @deprecated removed in deluge 2.0, ignored
-   */
-  compact_allocation?: boolean;
-  /**
    * Assume all files are present and skip checking them
    */
   seed_mode: boolean;
@@ -354,30 +350,7 @@ export interface ProxySettings {
  * Result of `core.get_config`
  * https://github.com/deluge-torrent/deluge/blob/deluge-2.2.0/deluge/core/preferencesmanager.py#L37
  */
-/**
- * @deprecated deluge 1.3 proxy settings
- */
-export interface DelugeLegacyProxy {
-  type: 0 | 1 | 2 | 3 | 4 | 5;
-  hostname: string;
-  username: string;
-  password: string;
-  port: number;
-}
-
 export interface DelugeSettings {
-  /**
-   * @deprecated deluge 1.3 only, not returned by deluge 2.x
-   */
-  enc_prefer_rc4?: boolean;
-  /**
-   * @deprecated deluge 1.3 only, not returned by deluge 2.x
-   */
-  autoadd_enable?: boolean;
-  /**
-   * @deprecated deluge 1.3 only, deluge 2.x returns a single `proxy`
-   */
-  proxies?: Record<'peer' | 'web_seed' | 'tracker' | 'dht', DelugeLegacyProxy>;
   /**
    * Yes, please send anonymous statistics.
    * default: false
