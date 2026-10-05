@@ -8,6 +8,8 @@
 npm install @ctrl/deluge
 ```
 
+Requires Node.js 24 or newer.
+
 ### Use
 
 ```ts
@@ -26,7 +28,14 @@ async function main() {
 
 ### API
 
-Docs: https://deluge.ep.workers.dev
+Docs: https://deluge.ep.workers.dev  
+Deluge API Docs: https://deluge.readthedocs.io/en/latest/reference/api.html
+
+Things that work differently from the other clients:
+
+- supports Deluge 2.x
+- `label` needs Deluge's Label plugin, enable it with `client.enablePlugin('Label')`. Setting a label fails without it
+- a label set by `normalizedAddTorrent` can take a few seconds to show up in results
 
 ### Normalized API
 
@@ -52,27 +61,23 @@ console.log(data);
 
 ##### pauseTorrent and resumeTorrent
 
-Pause or resume a torrent
+Pause or resume one or more torrents
 
 ```ts
-const paused = await client.pauseTorrent('torrent-hash');
-console.log(paused);
-const resumed = await client.resumeTorrent('torrent-hash');
-console.log(resumed);
+await client.pauseTorrent('torrent-hash');
+await client.resumeTorrent(['torrent-hash', 'other-torrent-hash']);
 ```
 
 ##### removeTorrent
 
-Remove a torrent. Does not remove data on disk by default.
+Remove one or more torrents, throws if a torrent doesn't exist. Does not remove data on disk by default.
 
 ```ts
 // does not remove data on disk
-const result = await client.removeTorrent('torrent-hash', false);
-console.log(result);
+await client.removeTorrent('torrent-hash', false);
 
 // remove data on disk
-const res = await client.removeTorrent('torrent-hash', true);
-console.log(res);
+await client.removeTorrent(['torrent-hash', 'other-torrent-hash'], true);
 ```
 
 ##### queueUp and queueDown
