@@ -367,13 +367,20 @@ export class Deluge implements TorrentClient {
   }
 
   /**
-   *
-   * @param torrentId torrent id from list torrents
+   * @param torrentId one or more torrent ids from list torrents
    * @param removeData (default: false) If true, remove the data from disk
+   * @throws when a torrent doesn't exist
    */
-  async removeTorrent(torrentId: string, removeData = false): Promise<BooleanStatus> {
-    const req = await this.request<BooleanStatus>('core.remove_torrent', [torrentId, removeData]);
-    return req._data;
+  async removeTorrent(torrentId: string | string[], removeData = false): Promise<void> {
+    if (!Array.isArray(torrentId)) {
+      await this.request<BooleanStatus>('core.remove_torrent', [torrentId, removeData]);
+      return;
+    }
+
+    const res = await this.removeTorrents(torrentId, removeData);
+    if (res.result.length > 0) {
+      throw new Error(res.result.map(([, message]) => message).join(', '));
+    }
   }
 
   /**
@@ -553,14 +560,14 @@ export class Deluge implements TorrentClient {
     return req._data;
   }
 
-  async pauseTorrent(torrentId: string): Promise<DefaultResponse> {
-    const req = await this.request<DefaultResponse>('core.pause_torrent', [[torrentId]]);
-    return req._data;
+  async pauseTorrent(torrentId: string | string[]): Promise<void> {
+    const torrentIds = Array.isArray(torrentId) ? torrentId : [torrentId];
+    await this.request<DefaultResponse>('core.pause_torrent', [torrentIds]);
   }
 
-  async resumeTorrent(torrentId: string): Promise<DefaultResponse> {
-    const req = await this.request<DefaultResponse>('core.resume_torrent', [[torrentId]]);
-    return req._data;
+  async resumeTorrent(torrentId: string | string[]): Promise<void> {
+    const torrentIds = Array.isArray(torrentId) ? torrentId : [torrentId];
+    await this.request<DefaultResponse>('core.resume_torrent', [torrentIds]);
   }
 
   async setTorrentOptions(
@@ -698,14 +705,14 @@ export class Deluge implements TorrentClient {
     return req._data;
   }
 
-  async queueUp(torrentId: string): Promise<DefaultResponse> {
-    const req = await this.request<DefaultResponse>('core.queue_up', [[torrentId]]);
-    return req._data;
+  async queueUp(torrentId: string | string[]): Promise<void> {
+    const torrentIds = Array.isArray(torrentId) ? torrentId : [torrentId];
+    await this.request<DefaultResponse>('core.queue_up', [torrentIds]);
   }
 
-  async queueDown(torrentId: string): Promise<DefaultResponse> {
-    const req = await this.request<DefaultResponse>('core.queue_down', [[torrentId]]);
-    return req._data;
+  async queueDown(torrentId: string | string[]): Promise<void> {
+    const torrentIds = Array.isArray(torrentId) ? torrentId : [torrentId];
+    await this.request<DefaultResponse>('core.queue_down', [torrentIds]);
   }
 
   async getConfig(): Promise<ConfigResponse> {

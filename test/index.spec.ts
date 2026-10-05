@@ -245,6 +245,22 @@ it('should pause/resume torrents', async () => {
   for (const key of keys) {
     await deluge.resumeTorrent(key);
   }
+
+  await deluge.pauseTorrent(keys);
+  await deluge.resumeTorrent(keys);
+});
+it('should remove torrent', async () => {
+  const deluge = new Deluge({ baseUrl });
+  const res = await setupTorrent(deluge);
+  const key = Object.keys(res.result.torrents)[0]!;
+  await deluge.removeTorrent([key], false);
+  expect(Object.keys((await deluge.listTorrents()).result.torrents)).toHaveLength(0);
+});
+it('should throw when removing a torrent that does not exist', async () => {
+  const deluge = new Deluge({ baseUrl });
+  await setupTorrent(deluge);
+  await expect(deluge.removeTorrent('0'.repeat(40))).rejects.toThrow('not in session');
+  await expect(deluge.removeTorrent(['0'.repeat(40)])).rejects.toThrow('not in session');
 });
 it('should set torrent options', async () => {
   const deluge = new Deluge({ baseUrl });
