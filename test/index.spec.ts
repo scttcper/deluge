@@ -405,6 +405,32 @@ it('should set 2.x torrent options', async () => {
   expect(status.result.sequential_download).toBe(true);
   expect(status.result.name).toBe('renamed');
 });
+it('should translate deluge 1.3 torrent option names', async () => {
+  const client = new Deluge({ baseUrl });
+  await setupTorrent(client);
+  await client.setTorrentOptions(torrentHash, {
+    is_auto_managed: false,
+    prioritize_first_last: true,
+    name: 'legacy',
+  });
+  const fields = ['auto_managed', 'prioritize_first_last_pieces'];
+  // the web ui caches torrent status for a moment
+  await pWaitFor(
+    async () => {
+      const status = await client.getTorrentStatus(torrentHash, fields);
+      return status.result.name === 'legacy';
+    },
+    { timeout: 10_000 },
+  );
+  const status = await client.getTorrentStatus(torrentHash, fields);
+  expect(status.result.auto_managed).toBe(false);
+  expect(status.result.prioritize_first_last_pieces).toBe(true);
+});
+it('should still accept plugin names as an array', async () => {
+  const client = new Deluge({ baseUrl });
+  const res = await client.getPluginInfo(['Label']);
+  expect(res.result.Name).toBe('Label');
+});
 it('should skip pseudo labels in all data', async () => {
   const client = new Deluge({ baseUrl });
   await setupTorrent(client);

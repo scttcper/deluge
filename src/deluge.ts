@@ -304,7 +304,9 @@ export class Deluge implements TorrentClient {
       path = torrent;
     }
 
-    const res = await this.request<AddTorrentResponse>('web.add_torrents', [[{ path, options }]]);
+    const res = await this.request<AddTorrentResponse>('web.add_torrents', [
+      [{ path, options: legacyTorrentOptions(options) }],
+    ]);
     const body = res._data;
 
     if (!body.result) {
@@ -357,7 +359,10 @@ export class Deluge implements TorrentClient {
     magnet: string,
     options: Partial<AddTorrentOptions> = {},
   ): Promise<StringStatus> {
-    const res = await this.request<StringStatus>('core.add_torrent_magnet', [magnet, options]);
+    const res = await this.request<StringStatus>('core.add_torrent_magnet', [
+      magnet,
+      legacyTorrentOptions(options),
+    ]);
     return res._data;
   }
 
@@ -564,7 +569,7 @@ export class Deluge implements TorrentClient {
   ): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.set_torrent_options', [
       [torrentId],
-      options,
+      legacyTorrentOptions(options),
     ]);
     return req._data;
   }
@@ -718,18 +723,27 @@ export class Deluge implements TorrentClient {
     return req._data;
   }
 
-  async getPluginInfo(plugin: string): Promise<PluginInfo> {
-    const req = await this.request<PluginInfo>('web.get_plugin_info', [plugin]);
+  /**
+   * @param plugin plugin name, an array is still accepted but deluge only reads one name
+   */
+  async getPluginInfo(plugin: string | string[]): Promise<PluginInfo> {
+    const req = await this.request<PluginInfo>('web.get_plugin_info', [plugin].flat());
     return req._data;
   }
 
-  async enablePlugin(plugin: string): Promise<BooleanStatus> {
-    const req = await this.request<BooleanStatus>('core.enable_plugin', [plugin]);
+  /**
+   * @param plugin plugin name, an array is still accepted but deluge only reads one name
+   */
+  async enablePlugin(plugin: string | string[]): Promise<BooleanStatus> {
+    const req = await this.request<BooleanStatus>('core.enable_plugin', [plugin].flat());
     return req._data;
   }
 
-  async disablePlugin(plugin: string): Promise<BooleanStatus> {
-    const req = await this.request<BooleanStatus>('core.disable_plugin', [plugin]);
+  /**
+   * @param plugin plugin name, an array is still accepted but deluge only reads one name
+   */
+  async disablePlugin(plugin: string | string[]): Promise<BooleanStatus> {
+    const req = await this.request<BooleanStatus>('core.disable_plugin', [plugin].flat());
     return req._data;
   }
 
@@ -807,4 +821,18 @@ export class Deluge implements TorrentClient {
     this.state.auth.expires =
       expires && !Number.isNaN(expires.getTime()) ? expires.toISOString() : undefined;
   }
+}
+
+/**
+ * Translates deluge 1.3 option names that deluge 2.x silently ignores
+ */
+function legacyTorrentOptions<T extends Partial<TorrentOptions>>(options: T): T {
+  const { prioritize_first_last, is_auto_managed, ...rest } = options;
+  return {
+    ...(prioritize_first_last === undefined
+      ? {}
+      : { prioritize_first_last_pieces: prioritize_first_last }),
+    ...(is_auto_managed === undefined ? {} : { auto_managed: is_auto_managed }),
+    ...rest,
+  } as T;
 }
