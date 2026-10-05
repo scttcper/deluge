@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { TorrentState } from '@ctrl/shared-torrent';
 import pWaitFor from 'p-wait-for';
 import { uint8ArrayToBase64 } from 'uint8array-extras';
 import { afterEach, beforeAll, expect, it } from 'vitest';
@@ -32,7 +33,7 @@ async function setupTorrent(deluge: Deluge): Promise<TorrentListResponse> {
 
 beforeAll(async () => {
   const deluge = new Deluge({ baseUrl });
-  await deluge.enablePlugin(['Label']);
+  await deluge.enablePlugin('Label');
 });
 afterEach(async () => {
   const deluge = new Deluge({ baseUrl });
@@ -67,10 +68,10 @@ it.skip('should get plugins', async () => {
   expect(res.result.available_plugins).toBeDefined();
   expect(res.result.available_plugins).toContain('Label');
 });
-it.skip('should get plugins info', async () => {
+it('should get plugins info', async () => {
   const deluge = new Deluge({ baseUrl });
-  const res = await deluge.getPluginInfo(['Label']);
-  // For some reason this is empty
+  const res = await deluge.getPluginInfo('Label');
+  expect(res.result.Name).toBe('Label');
   expect(res.result.License).toBe('GPLv3');
 });
 it('should get version', async () => {
@@ -81,10 +82,10 @@ it('should get version', async () => {
 // for some reason explodes deluge
 // it('should enable/disable plugins', async () => {
 //   const deluge = new Deluge({ baseURL });
-//   await deluge.enablePlugin(['Label']);
+//   await deluge.enablePlugin('Label');
 //   const after = await deluge.getPlugins();
 //   expect(after.result.enabled_plugins).toEqual(['Label']);
-//   await deluge.disablePlugin(['Label']);
+//   await deluge.disablePlugin('Label');
 // });
 it('should throw json-rpc errors', async () => {
   const deluge = new Deluge({ baseUrl });
@@ -95,6 +96,8 @@ it('should get config', async () => {
   const deluge = new Deluge({ baseUrl });
   const res = await deluge.getConfig();
   expect(res.result.dht).toBeDefined();
+  expect(res.result.proxy.type).toBe(0);
+  expect(res.result.max_active_seeding).toBe(5);
 });
 it('should set config', async () => {
   const deluge = new Deluge({ baseUrl });
@@ -176,7 +179,11 @@ it('should list torrents', async () => {
   for (const key of keys) {
     const torrent = res.result.torrents[key];
     expect(torrent.is_auto_managed).toBe(true);
+    expect(torrent.total_size).toBe(1_953_349_632);
   }
+
+  expect(typeof res.result.stats.has_incoming_connections).toBe('number');
+  expect(res.result.filters.owner).toBeDefined();
 });
 it('should get array of normalized torrent data', async () => {
   const deluge = new Deluge({ baseUrl });
@@ -261,7 +268,8 @@ it('should return normalized torrent data', async () => {
   expect(torrent.connectedSeeds).toBe(0);
   expect(torrent.downloadSpeed).toBe(0);
   expect(torrent.eta).toBe(0);
-  // expect(torrent.isCompleted).toBe(false);
+  expect(torrent.isCompleted).toBe(false);
+  expect(torrent.dateCompleted).toBeUndefined();
   // expect(torrent.label).toBe(undefined);
   expect(torrent.name).toBe(torrentName);
   expect(torrent.progress).toBeGreaterThanOrEqual(0);
@@ -274,7 +282,7 @@ it('should return normalized torrent data', async () => {
   expect(torrent.totalPeers).toBe(-1);
   expect(torrent.totalSeeds).toBe(-1);
   expect(torrent.totalSelected).toBe(1_953_349_632);
-  // expect(torrent.totalSize).toBe(undefined);
+  expect(torrent.totalSize).toBe(1_953_349_632);
   expect(torrent.totalUploaded).toBe(0);
   expect(torrent.uploadSpeed).toBe(0);
 });
@@ -331,3 +339,180 @@ it('should download from url', async () => {
   const res = await client.listTorrents();
   expect(Object.keys(res.result.torrents)).toHaveLength(1);
 }, 15_000);
+it('should add torrent with normalized response paused', async () => {
+  const client = new Deluge({ baseUrl });
+  const torrent = await client.normalizedAddTorrent(torrentFileBuffer, { startPaused: true });
+  expect(torrent.state).toBe(TorrentState.paused);
+  expect(torrent.stateMessage).toBe('Paused');
+  expect(torrent.isCompleted).toBe(false);
+  expect(torrent.totalSize).toBe(1_953_349_632);
+});
+it('should add torrent using the daemon defaults', async () => {
+  const client = new Deluge({ baseUrl });
+  await client.setConfig({ add_paused: true, sequential_download: true });
+  try {
+    await client.addTorrent(torrentFileBuffer);
+    const status = await client.getTorrentStatus(torrentHash, ['sequential_download']);
+    expect(status.result.state).toBe('Paused');
+    expect(status.result.sequential_download).toBe(true);
+  } finally {
+    await client.setConfig({ add_paused: false, sequential_download: false });
+  }
+});
+it('should add magnet and return the hash', async () => {
+  const client = new Deluge({ baseUrl });
+  const magnetHash = 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678';
+  const res = await client.addTorrentMagnet(`magnet:?xt=urn:btih:${magnetHash}&dn=example`, {
+    add_paused: true,
+  });
+  expect(res.result).toBe(magnetHash);
+});
+it('should set torrent trackers', async () => {
+  const client = new Deluge({ baseUrl });
+  await setupTorrent(client);
+  const trackers = [{ url: 'http://tracker.example.com/announce', tier: 0 }];
+  await client.setTorrentTrackers(torrentHash, trackers);
+  // the web ui caches torrent status for a moment
+  await pWaitFor(
+    async () => {
+      const status = await client.getTorrentStatus(torrentHash, ['trackers']);
+      return status.result.trackers[0].url === trackers[0].url;
+    },
+    { timeout: 10_000 },
+  );
+});
+it('should set 2.x torrent options', async () => {
+  const client = new Deluge({ baseUrl });
+  await setupTorrent(client);
+  await client.setTorrentOptions(torrentHash, {
+    auto_managed: false,
+    prioritize_first_last_pieces: true,
+    sequential_download: true,
+    name: 'renamed',
+  });
+  const fields = ['auto_managed', 'prioritize_first_last_pieces', 'sequential_download'];
+  // the web ui caches torrent status for a moment
+  await pWaitFor(
+    async () => {
+      const status = await client.getTorrentStatus(torrentHash, fields);
+      return status.result.name === 'renamed';
+    },
+    { timeout: 10_000 },
+  );
+  const status = await client.getTorrentStatus(torrentHash, fields);
+  expect(status.result.auto_managed).toBe(false);
+  expect(status.result.prioritize_first_last_pieces).toBe(true);
+  expect(status.result.sequential_download).toBe(true);
+  expect(status.result.name).toBe('renamed');
+});
+it('should skip pseudo labels in all data', async () => {
+  const client = new Deluge({ baseUrl });
+  await setupTorrent(client);
+  await client.addLabel('alldata');
+  try {
+    await client.setTorrentLabel(torrentHash, 'alldata');
+    const res = await client.getAllData();
+    const ids = res.labels.map(label => label.id);
+    expect(ids).not.toContain('All');
+    expect(ids).not.toContain('');
+    expect(res.labels).toContainEqual({ id: 'alldata', name: 'alldata', count: 1 });
+  } finally {
+    await client.removeLabel('alldata');
+  }
+});
+it('should normalize error state', async () => {
+  const client = new Deluge({ baseUrl });
+  // can't create the download folder so allocating the files errors
+  await client.addTorrent(torrentFileBuffer, {
+    download_location: '/proc/deluge-test',
+    pre_allocate_storage: true,
+  });
+  await pWaitFor(
+    async () => {
+      const status = await client.getTorrentStatus(torrentHash);
+      return status.result.state === 'Error';
+    },
+    { timeout: 10_000 },
+  );
+  const torrent = await client.getTorrent(torrentHash);
+  expect(torrent.state).toBe(TorrentState.error);
+  // deluge reports 100 progress while errored
+  expect(torrent.progress).toBe(1);
+  expect(torrent.isCompleted).toBe(false);
+  expect(torrent.dateCompleted).toBeUndefined();
+  expect(torrent.stateMessage).toBe('No such file or directory');
+}, 15_000);
+it('should move storage', async () => {
+  const client = new Deluge({ baseUrl });
+  await setupTorrent(client);
+  await client.moveStorage([torrentHash], '/tmp/deluge-moved');
+  await pWaitFor(
+    async () => {
+      const status = await client.getTorrentStatus(torrentHash);
+      return status.result.save_path === '/tmp/deluge-moved';
+    },
+    { timeout: 10_000 },
+  );
+});
+it('should rename files and folders', async () => {
+  const client = new Deluge({ baseUrl });
+  await setupTorrent(client);
+  const filePath = async () => {
+    const status = await client.getTorrentStatus(torrentHash, ['files']);
+    return status.result.files[0].path as string;
+  };
+
+  await client.renameFiles(torrentHash, [[0, 'folder/renamed.iso']]);
+  await pWaitFor(async () => (await filePath()) === 'folder/renamed.iso', { timeout: 10_000 });
+  await client.renameFolder(torrentHash, 'folder/', 'other/');
+  await pWaitFor(async () => (await filePath()) === 'other/renamed.iso', { timeout: 10_000 });
+});
+it('should remove multiple torrents', async () => {
+  const client = new Deluge({ baseUrl });
+  await setupTorrent(client);
+  const res = await client.removeTorrents([torrentHash, 'abc123hash'], true);
+  expect(res.result).toEqual([['abc123hash', 'torrent_id abc123hash not in session.']]);
+  const list = await client.listTorrents();
+  expect(Object.keys(list.result.torrents)).toHaveLength(0);
+});
+it('should pause and resume the session', async () => {
+  const client = new Deluge({ baseUrl });
+  try {
+    await client.pauseSession();
+    expect((await client.isSessionPaused()).result).toBe(true);
+  } finally {
+    await client.resumeSession();
+  }
+
+  expect((await client.isSessionPaused()).result).toBe(false);
+});
+it('should get magnet uri', async () => {
+  const client = new Deluge({ baseUrl });
+  await setupTorrent(client);
+  const res = await client.getMagnetUri(torrentHash);
+  expect(res.result).toContain(`magnet:?xt=urn:btih:${torrentHash}`);
+  expect(res.result).toContain(`dn=${torrentName}`);
+});
+it('should get magnet info', async () => {
+  const client = new Deluge({ baseUrl });
+  const res = await client.getMagnetInfo(
+    `magnet:?xt=urn:btih:${torrentHash}&dn=${torrentName}&tr=http://tracker.example.com/announce`,
+  );
+  expect(res.result).toEqual({
+    name: torrentName,
+    info_hash: torrentHash,
+    files_tree: '',
+    trackers: { 'http://tracker.example.com/announce': 0 },
+  });
+  const invalid = await client.getMagnetInfo('not a magnet');
+  expect(invalid.result).toEqual({});
+});
+it('should get free space', async () => {
+  const client = new Deluge({ baseUrl });
+  const res = await client.getFreeSpace('/tmp');
+  expect(res.result).toBeGreaterThan(0);
+  const missing = await client.getFreeSpace('/does/not/exist');
+  expect(missing.result).toBe(-1);
+  const fallback = await client.getFreeSpace();
+  expect(typeof fallback.result).toBe('number');
+});

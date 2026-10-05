@@ -25,8 +25,11 @@ import type {
   GetHostsResponse,
   GetHostStatusResponse,
   ListMethods,
+  MagnetInfoResponse,
+  NumberStatus,
   PluginInfo,
   PluginsListResponse,
+  RemoveTorrentsResponse,
   StringStatus,
   TorrentFiles,
   TorrentInfo,
@@ -277,9 +280,12 @@ export class Deluge implements TorrentClient {
     return body.result;
   }
 
+  /**
+   * @param options anything left out uses the daemon's core.conf defaults
+   */
   async addTorrent(
     torrent: string | Uint8Array<ArrayBuffer>,
-    config: Partial<AddTorrentOptions> = {},
+    options: Partial<AddTorrentOptions> = {},
   ): Promise<AddTorrentResponse> {
     let path: string;
     const isUploaded = typeof torrent === 'string' && torrent.includes('delugeweb-');
@@ -298,25 +304,6 @@ export class Deluge implements TorrentClient {
       path = torrent;
     }
 
-    const options: AddTorrentOptions = {
-      file_priorities: [],
-      add_paused: false,
-      compact_allocation: false,
-      max_connections: -1,
-      max_download_speed: -1,
-      max_upload_slots: -1,
-      max_upload_speed: -1,
-      prioritize_first_last_pieces: false,
-      // not passing path by default uses default
-      // download_location: '/root/Downloads',
-      // move_completed_path: '/root/Downloads',
-      pre_allocate_storage: false,
-      move_completed: false,
-      seed_mode: false,
-      sequential_download: false,
-      super_seeding: false,
-      ...config,
-    };
     const res = await this.request<AddTorrentResponse>('web.add_torrents', [[{ path, options }]]);
     const body = res._data;
 
@@ -362,31 +349,15 @@ export class Deluge implements TorrentClient {
     return this.getTorrent(torrentHash);
   }
 
+  /**
+   * @param options anything left out uses the daemon's core.conf defaults
+   * @returns the torrent id
+   */
   async addTorrentMagnet(
     magnet: string,
-    config: Partial<AddTorrentOptions> = {},
-  ): Promise<BooleanStatus> {
-    const options: AddTorrentOptions = {
-      file_priorities: [],
-      add_paused: false,
-      compact_allocation: false,
-      max_connections: -1,
-      max_download_speed: -1,
-      max_upload_slots: -1,
-      max_upload_speed: -1,
-      prioritize_first_last_pieces: false,
-      // not passing path by default uses default
-      // download_location: '/root/Downloads',
-      move_completed: false,
-      // move_completed_path: '/root/Downloads',
-      pre_allocate_storage: false,
-      seed_mode: false,
-      sequential_download: false,
-      super_seeding: false,
-      ...config,
-    };
-    const res = await this.request<BooleanStatus>('core.add_torrent_magnet', [magnet, options]);
-
+    options: Partial<AddTorrentOptions> = {},
+  ): Promise<StringStatus> {
+    const res = await this.request<StringStatus>('core.add_torrent_magnet', [magnet, options]);
     return res._data;
   }
 
@@ -397,6 +368,17 @@ export class Deluge implements TorrentClient {
    */
   async removeTorrent(torrentId: string, removeData = false): Promise<BooleanStatus> {
     const req = await this.request<BooleanStatus>('core.remove_torrent', [torrentId, removeData]);
+    return req._data;
+  }
+
+  /**
+   * @param removeData (default: false) If true, remove the data from disk
+   */
+  async removeTorrents(torrentIds: string[], removeData = false): Promise<RemoveTorrentsResponse> {
+    const req = await this.request<RemoveTorrentsResponse>('core.remove_torrents', [
+      torrentIds,
+      removeData,
+    ]);
     return req._data;
   }
 
@@ -431,6 +413,11 @@ export class Deluge implements TorrentClient {
 
     if (listTorrents.result.filters.label) {
       for (const label of listTorrents.result.filters.label) {
+        // skip the `All` pseudo filter and the no label bucket
+        if (label[0] === 'All' || label[0] === '') {
+          continue;
+        }
+
         results.labels.push({
           id: label[0],
           name: label[0],
@@ -447,12 +434,15 @@ export class Deluge implements TorrentClient {
     filter: Record<string, string> = {},
   ): Promise<TorrentListResponse> {
     const fields = [
+      'completed_time',
       'distributed_copies',
       'download_payload_rate',
       'eta',
       'is_auto_managed',
+      'is_finished',
       'max_download_speed',
       'max_upload_speed',
+      'message',
       'name',
       'num_peers',
       'num_seeds',
@@ -466,6 +456,7 @@ export class Deluge implements TorrentClient {
       'total_done',
       'total_peers',
       'total_seeds',
+      'total_size',
       'total_uploaded',
       'total_wanted',
       'tracker_host',
@@ -534,6 +525,9 @@ export class Deluge implements TorrentClient {
       'max_download_speed',
       'max_upload_speed',
       'seeds_peers_ratio',
+      'is_finished',
+      'completed_time',
+      'message',
       'label',
       ...additionalFields,
     ];
@@ -577,9 +571,57 @@ export class Deluge implements TorrentClient {
 
   async setTorrentTrackers(torrentId: string, trackers: Tracker[] = []): Promise<DefaultResponse> {
     const req = await this.request<DefaultResponse>('core.set_torrent_trackers', [
-      [torrentId],
+      torrentId,
       trackers,
     ]);
+    return req._data;
+  }
+
+  /**
+   * Moves the torrent data, returns before the move finishes
+   */
+  async moveStorage(torrentIds: string[], destination: string): Promise<DefaultResponse> {
+    const req = await this.request<DefaultResponse>('core.move_storage', [torrentIds, destination]);
+    return req._data;
+  }
+
+  /**
+   * Renames files in a torrent, libtorrent renames them async so the new names can take a moment to show up
+   * @param files `[fileIndex, newPath]` pairs, the path can include folders
+   */
+  async renameFiles(torrentId: string, files: Array<[number, string]>): Promise<DefaultResponse> {
+    const req = await this.request<DefaultResponse>('core.rename_files', [torrentId, files]);
+    return req._data;
+  }
+
+  /**
+   * Renames a folder by renaming every file under it
+   * @param folder ex - `'folder/'`
+   * @param newFolder an empty string moves the contents up to the parent folder
+   */
+  async renameFolder(
+    torrentId: string,
+    folder: string,
+    newFolder: string,
+  ): Promise<DefaultResponse> {
+    const req = await this.request<DefaultResponse>('core.rename_folder', [
+      torrentId,
+      folder,
+      newFolder,
+    ]);
+    return req._data;
+  }
+
+  async getMagnetUri(torrentId: string): Promise<StringStatus> {
+    const req = await this.request<StringStatus>('core.get_magnet_uri', [torrentId]);
+    return req._data;
+  }
+
+  /**
+   * Parses a magnet uri for its hash, name and trackers
+   */
+  async getMagnetInfo(uri: string): Promise<MagnetInfoResponse> {
+    const req = await this.request<MagnetInfoResponse>('web.get_magnet_info', [uri]);
     return req._data;
   }
 
@@ -610,6 +652,34 @@ export class Deluge implements TorrentClient {
 
   async getLabels(): Promise<ListMethods> {
     const req = await this.request<ListMethods>('label.get_labels', []);
+    return req._data;
+  }
+
+  /**
+   * Pauses every torrent
+   */
+  async pauseSession(): Promise<DefaultResponse> {
+    const req = await this.request<DefaultResponse>('core.pause_session', []);
+    return req._data;
+  }
+
+  async resumeSession(): Promise<DefaultResponse> {
+    const req = await this.request<DefaultResponse>('core.resume_session', []);
+    return req._data;
+  }
+
+  async isSessionPaused(): Promise<BooleanStatus> {
+    const req = await this.request<BooleanStatus>('core.is_session_paused', []);
+    return req._data;
+  }
+
+  /**
+   * Free bytes at path, -1 when the path doesn't exist
+   * https://github.com/deluge-torrent/deluge/blob/deluge-2.2.0/deluge/core/core.py#L1244
+   * @param path defaults to the download location
+   */
+  async getFreeSpace(path?: string): Promise<NumberStatus> {
+    const req = await this.request<NumberStatus>('core.get_free_space', path ? [path] : []);
     return req._data;
   }
 
@@ -648,18 +718,18 @@ export class Deluge implements TorrentClient {
     return req._data;
   }
 
-  async getPluginInfo(plugins: string[]): Promise<PluginInfo> {
-    const req = await this.request<PluginInfo>('web.get_plugin_info', plugins);
+  async getPluginInfo(plugin: string): Promise<PluginInfo> {
+    const req = await this.request<PluginInfo>('web.get_plugin_info', [plugin]);
     return req._data;
   }
 
-  async enablePlugin(plugins: string[]): Promise<DefaultResponse> {
-    const req = await this.request<DefaultResponse>('core.enable_plugin', plugins);
+  async enablePlugin(plugin: string): Promise<BooleanStatus> {
+    const req = await this.request<BooleanStatus>('core.enable_plugin', [plugin]);
     return req._data;
   }
 
-  async disablePlugin(plugins: string[]): Promise<DefaultResponse> {
-    const req = await this.request<DefaultResponse>('core.disable_plugin', plugins);
+  async disablePlugin(plugin: string): Promise<BooleanStatus> {
+    const req = await this.request<BooleanStatus>('core.disable_plugin', [plugin]);
     return req._data;
   }
 
