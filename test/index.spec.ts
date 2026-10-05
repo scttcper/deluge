@@ -258,14 +258,9 @@ it('should remove torrent', async () => {
 });
 it('should throw torrent_not_found for a torrent that does not exist', async () => {
   const deluge = new Deluge({ baseUrl });
-  await setupTorrent(deluge);
   const missing = '0'.repeat(40);
   const notFound = { name: 'TorrentClientError', code: 'torrent_not_found' };
   await expect(deluge.getTorrent(missing)).rejects.toMatchObject(notFound);
-  await expect(deluge.pauseTorrent(missing)).rejects.toMatchObject(notFound);
-  await expect(deluge.resumeTorrent(missing)).rejects.toMatchObject(notFound);
-  await expect(deluge.queueUp(missing)).rejects.toMatchObject(notFound);
-  await expect(deluge.queueDown(missing)).rejects.toMatchObject(notFound);
   await expect(deluge.removeTorrent(missing)).rejects.toMatchObject(notFound);
   await expect(deluge.removeTorrent([missing])).rejects.toMatchObject(notFound);
 });

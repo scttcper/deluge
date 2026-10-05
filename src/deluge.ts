@@ -569,13 +569,11 @@ export class Deluge implements TorrentClient {
 
   async pauseTorrent(torrentId: string | string[]): Promise<void> {
     const torrentIds = Array.isArray(torrentId) ? torrentId : [torrentId];
-    await this.assertTorrentsExist(torrentIds);
     await this.request<DefaultResponse>('core.pause_torrent', [torrentIds]);
   }
 
   async resumeTorrent(torrentId: string | string[]): Promise<void> {
     const torrentIds = Array.isArray(torrentId) ? torrentId : [torrentId];
-    await this.assertTorrentsExist(torrentIds);
     await this.request<DefaultResponse>('core.resume_torrent', [torrentIds]);
   }
 
@@ -716,27 +714,12 @@ export class Deluge implements TorrentClient {
 
   async queueUp(torrentId: string | string[]): Promise<void> {
     const torrentIds = Array.isArray(torrentId) ? torrentId : [torrentId];
-    await this.assertTorrentsExist(torrentIds);
     await this.request<DefaultResponse>('core.queue_up', [torrentIds]);
   }
 
   async queueDown(torrentId: string | string[]): Promise<void> {
     const torrentIds = Array.isArray(torrentId) ? torrentId : [torrentId];
-    await this.assertTorrentsExist(torrentIds);
     await this.request<DefaultResponse>('core.queue_down', [torrentIds]);
-  }
-
-  /**
-   * Deluge raises a KeyError for unknown ids when pausing, resuming or queueing
-   */
-  private async assertTorrentsExist(torrentIds: string[]): Promise<void> {
-    const res = await this.request<{ result: Record<string, unknown> }>(
-      'core.get_torrents_status',
-      [{ id: torrentIds }, ['hash']],
-    );
-    if (Object.keys(res._data!.result).length < new Set(torrentIds).size) {
-      throw new TorrentClientError('Torrent not found', 'torrent_not_found');
-    }
   }
 
   async getConfig(): Promise<ConfigResponse> {
