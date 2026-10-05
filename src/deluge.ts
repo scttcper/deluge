@@ -704,11 +704,10 @@ export class Deluge implements TorrentClient {
       dispatcher: this.config.dispatcher,
     });
 
-    const err =
-      (res.body as any as { error: unknown })?.error ?? (typeof res.body === 'string' && res.body);
-
-    if (err) {
-      throw new Error((err as Error).message || (err as string));
+    // deluge returns json-rpc errors with a 200, res.body is the unread stream so check the parsed data
+    const { error } = res._data as { error?: { message: string } | null };
+    if (error) {
+      throw new Error(error.message);
     }
 
     return res;

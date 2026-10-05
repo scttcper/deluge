@@ -86,6 +86,11 @@ it('should get version', async () => {
 //   expect(after.result.enabled_plugins).toEqual(['Label']);
 //   await deluge.disablePlugin(['Label']);
 // });
+it('should throw json-rpc errors', async () => {
+  const deluge = new Deluge({ baseUrl });
+  await expect(deluge.request('core.not_a_method')).rejects.toThrow('Unknown method');
+});
+
 it('should get config', async () => {
   const deluge = new Deluge({ baseUrl });
   const res = await deluge.getConfig();
